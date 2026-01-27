@@ -76,7 +76,8 @@ def run_analyze(target_date: str | None = None) -> None:
     # 4) Insert clusters + cluster_items
     for ci, cluster_indices in enumerate(clusters_idx):
         cluster_items_sub = [pain_items[i] for i in cluster_indices]
-        texts_sub = [texts[pain_indices[i]] for i in cluster_indices]
+        # cluster_indices are indices into pain_items/texts (already filtered), not the original items list
+        texts_sub = [texts[i] for i in cluster_indices]
         top_terms = top_terms_tfidf(texts_sub, k=5)
         urls = []
         for r in cluster_items_sub:

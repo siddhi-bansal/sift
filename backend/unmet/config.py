@@ -33,6 +33,7 @@ SUPABASE_DB_URL = _str("SUPABASE_DB_URL")
 
 # Gemini
 GEMINI_API_KEY = _str("GEMINI_API_KEY")
+GEMINI_TEXT_MODEL = _str("GEMINI_TEXT_MODEL") or "gemini-2.0-flash"
 
 # Reddit: PRAW (official API, needs approval) or Apify (no Reddit approval)
 REDDIT_CLIENT_ID = _str("REDDIT_CLIENT_ID")

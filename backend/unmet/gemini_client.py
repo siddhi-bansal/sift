@@ -9,7 +9,7 @@ from typing import Any
 import google.generativeai as genai
 import httpx
 
-from .config import GEMINI_API_KEY
+from .config import GEMINI_API_KEY, GEMINI_TEXT_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,11 @@ def _configure() -> None:
         genai.configure(api_key=GEMINI_API_KEY)
 
 
-def generate_text(prompt: str, model: str = "gemini-1.5-flash", max_retries: int = 3) -> str:
+def generate_text(prompt: str, model: str | None = None, max_retries: int = 3) -> str:
     """Generate text with retries and basic rate-limit backoff."""
     _configure()
-    model_obj = genai.GenerativeModel(model)
+    model_name = model or GEMINI_TEXT_MODEL
+    model_obj = genai.GenerativeModel(model_name)
     last_err: Exception | None = None
     for attempt in range(max_retries):
         try:
@@ -63,7 +64,7 @@ Content:
 {combined[:6000]}
 """
     try:
-        out = generate_text(prompt, model="gemini-1.5-flash")
+        out = generate_text(prompt)
         lines = [l.strip() for l in out.splitlines() if l.strip()]
         label = "OTHER"
         conf = 0.5

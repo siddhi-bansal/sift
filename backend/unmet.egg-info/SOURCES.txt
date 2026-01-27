@@ -17,6 +17,7 @@ unmet/analyze/pain_score.py
 unmet/analyze/runner.py
 unmet/ingest/__init__.py
 unmet/ingest/hn.py
+unmet/ingest/reddit_apify.py
 unmet/ingest/reddit_ingest.py
 unmet/ingest/rss_ingest.py
 unmet/ingest/runner.py
