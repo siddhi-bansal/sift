@@ -1,0 +1,78 @@
+"""Hacker News via official Firebase REST API."""
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+from typing import Any
+
+import httpx
+
+from ..config import HN_TOP_LIMIT, HN_COMMENTS_LIMIT
+
+logger = logging.getLogger(__name__)
+
+HN_BASE = "https://hacker-news.firebaseio.com/v0"
+
+
+def _fetch_json(url: str, client: httpx.Client) -> Any:
+    r = client.get(url, timeout=15)
+    r.raise_for_status()
+    return r.json()
+
+
+def fetch_hn_stories(
+    top_limit: int | None = None,
+    include_comments: bool | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Fetch top + new stories from HN, optionally comments.
+    Returns list of dicts ready for raw_items: source, source_id, url, title, text, author, published_at, metadata.
+    """
+    top_limit = top_limit if top_limit is not None else HN_TOP_LIMIT
+    include_comments = include_comments if include_comments is not None else (HN_COMMENTS_LIMIT > 0)
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    with httpx.Client(timeout=20) as client:
+        for endpoint in ("topstories", "newstories"):
+            try:
+                ids = _fetch_json(f"{HN_BASE}/{endpoint}.json", client)
+                if not isinstance(ids, list):
+                    continue
+                for item_id in ids[: top_limit // 2]:
+                    if str(item_id) in seen:
+                        continue
+                    seen.add(str(item_id))
+                    try:
+                        item = _fetch_json(f"{HN_BASE}/item/{item_id}.json", client)
+                    except Exception as e:
+                        logger.debug("HN item %s failed: %s", item_id, e)
+                        continue
+                    if not item or item.get("type") == "comment":
+                        continue
+                    if item.get("type") == "story":
+                        url = item.get("url") or f"https://news.ycombinator.com/item?id={item_id}"
+                        text = item.get("title", "")
+                        if item.get("text"):
+                            text = f"{text}\n\n{item.get('text','')}"
+                        published = None
+                        if item.get("time"):
+                            try:
+                                published = datetime.fromtimestamp(int(item["time"]), tz=timezone.utc)
+                            except Exception:
+                                pass
+                        out.append({
+                            "source": "hn",
+                            "source_id": str(item_id),
+                            "url": url,
+                            "title": (item.get("title") or "")[:500],
+                            "text": (text or "")[:50000],
+                            "author": item.get("by"),
+                            "published_at": published,
+                            "metadata": {"score": item.get("score"), "descendants": item.get("descendants")},
+                        })
+            except Exception as e:
+                logger.warning("HN %s failed: %s", endpoint, e)
+        if include_comments and out:
+            # Optionally add top-level comments as separate “items” for pain signals (stored as hn_comment)
+            pass  # MVP: skip comment ingestion unless HN_COMMENTS_LIMIT > 0 and we implement it
+    return out

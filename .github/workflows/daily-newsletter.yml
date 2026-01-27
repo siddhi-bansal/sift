@@ -1,0 +1,28 @@
+name: Daily newsletter
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend
+        run: cd backend && pip install -e .
+      - name: Ingest + Analyze + Run
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USER_AGENT: UnmetNewsletter/1.0
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          cd backend
+          python -m unmet ingest --date "$TODAY"
+          python -m unmet analyze --date "$TODAY"
+          python -m unmet run --date "$TODAY"

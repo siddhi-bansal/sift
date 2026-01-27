@@ -1,0 +1,170 @@
+:root {
+  --bg: #0f0f0f;
+  --surface: #1a1a1a;
+  --text: #e8e8e8;
+  --muted: #888;
+  --accent: #d4a853;
+  --accent-dim: #b8923d;
+  --border: #2a2a2a;
+  --error: #e05c5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 0 0 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+}
+
+.form-group input[type="email"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.interests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+}
+
+.interest-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color, background 0.15s;
+}
+.interest-chip:hover {
+  border-color: var(--accent-dim);
+}
+.interest-chip.selected {
+  border-color: var(--accent);
+  background: rgba(212, 168, 83, 0.12);
+}
+.interest-chip input {
+  accent-color: var(--accent);
+}
+
+.message {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+.message.success {
+  background: rgba(64, 160, 96, 0.15);
+  border: 1px solid rgba(64, 160, 96, 0.4);
+}
+.message.error {
+  background: rgba(224, 92, 92, 0.15);
+  border: 1px solid rgba(224, 92, 92, 0.4);
+  color: var(--error);
+}
+
+.preview-date {
+  margin-bottom: 1.5rem;
+}
+.preview-date label { margin-right: 0.5rem; color: var(--muted); }
+.preview-date input {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.prose {
+  color: var(--text);
+}
+.prose h1 { font-size: 1.5rem; margin: 1.5rem 0 0.5rem; }
+.prose h2 { font-size: 1.25rem; margin: 1.25rem 0 0.5rem; }
+.prose h3 { font-size: 1.1rem; margin: 1rem 0 0.4rem; }
+.prose p { margin: 0.5rem 0; }
+.prose ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+.prose li { margin: 0.25rem 0; }
+.prose strong { color: var(--accent); }
