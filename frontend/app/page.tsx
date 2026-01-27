@@ -94,10 +94,10 @@ export default function Home() {
     <main className="container">
       <div className="header">
         <div className="brand">
-          <div className="logo" aria-hidden />
+          <img src="/unmet-logo.png" alt="Unmet" className="logo" />
           <div>
-            <div style={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.1 }}>Unmet</div>
-            <div style={{ color: "var(--muted-2)", fontSize: "0.9rem" }}>Signal-first newsletter</div>
+            <div className="masthead-title">Unmet</div>
+            <div className="masthead-tagline">Signal-first newsletter</div>
           </div>
         </div>
         <div className="toplinks">
@@ -107,16 +107,20 @@ export default function Home() {
 
       <section className="layout">
         <div className="hero">
-          <div className="kicker">SIGNAL-FIRST NEWSLETTER FOR BUILDERS</div>
-          <h1 className="headline">Real problems. Real signals. Worth building.</h1>
+          <div className="kicker">FOR BUILDERS</div>
+          <h1 className="headline">Real problems. Real opportunities.</h1>
           <p className="lede">
-            Daily pain signals and industry catalysts pulled from Hacker News, Reddit, and tech news — clustered and summarized for builders.
+            Daily pain signals and industry catalysts from Hacker News, Reddit, and tech news.
           </p>
 
-          <div className="section-title">What you get</div>
+          <p style={{ maxWidth: "60ch", color: "var(--muted)", margin: "0 0 1.75rem" }}>
+            Unmet scans thousands of posts daily to find recurring complaints, broken workflows, and new pressures created by industry changes.
+          </p>
+
+          <div className="section-title">What shows up in each issue:</div>
           <ul className="bullets">
             <li>Top pain clusters (with evidence)</li>
-            <li>What’s rising since yesterday</li>
+            <li>What’s rising</li>
             <li>Catalysts creating new problems</li>
             <li>One buildable wedge</li>
           </ul>
@@ -124,9 +128,9 @@ export default function Home() {
           <div className="divider" />
 
           <div className="sample" aria-label="Today’s sample signal">
-            <div className="sample-label">— Today’s signal</div>
+            <div className="sample-label">Sample signal</div>
             <p>
-              <strong>Teams want dead-simple uptime monitoring — not another observability platform.</strong>
+              Teams want dead-simple uptime monitoring — not another observability platform.
             </p>
             <p>
               DevOps engineers are building their own scripts because existing tools feel bloated for basic uptime checks.
@@ -140,7 +144,7 @@ export default function Home() {
         <aside className="panel" aria-label="Signup">
           <h2>Get the digest</h2>
           <p className="hint">
-            One email. Once a day. Unsubscribe anytime.
+            One email. Once a day.
           </p>
 
           {status === "success" ? (
@@ -179,13 +183,14 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
+                <p className="hint" style={{ marginTop: "0.6rem" }}>Pick a few interests.</p>
               </div>
               <button type="submit" className="btn btn-primary" disabled={status === "loading"} style={{ width: "100%" }}>
                 {status === "loading" ? "Subscribing…" : "Subscribe"}
               </button>
               {message && status === "error" && <div className="message error">{message}</div>}
 
-              <div className="microcopy">No spam. No fluff. Signals only.</div>
+              <div className="microcopy">No spam. Unsubscribe anytime.</div>
 
               <div style={{ marginTop: "0.9rem", color: "var(--muted-2)", fontSize: "0.92rem" }}>
                 Want to see the format first? <a href="/preview">View a sample report</a>.
