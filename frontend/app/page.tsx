@@ -92,59 +92,115 @@ export default function Home() {
 
   return (
     <main className="container">
-      <h1>Unmet</h1>
-      <p className="subtitle">
-        Daily pain signals and industry catalysts for builders. We scan HN, Reddit, and news so you see complaints, unmet needs, and what’s changing.
-      </p>
+      <div className="header">
+        <div className="brand">
+          <div className="logo" aria-hidden />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.1 }}>Unmet</div>
+            <div style={{ color: "var(--muted-2)", fontSize: "0.9rem" }}>Signal-first newsletter</div>
+          </div>
+        </div>
+        <div className="toplinks">
+          <a href="/preview">Preview</a>
+        </div>
+      </div>
 
-      {status === "success" ? (
-        <div className="message success">{message}</div>
-      ) : (
-        <form onSubmit={submit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={status === "loading"}
-            />
+      <section className="layout">
+        <div className="hero">
+          <div className="kicker">SIGNAL-FIRST NEWSLETTER FOR BUILDERS</div>
+          <h1 className="headline">Real problems. Real signals. Worth building.</h1>
+          <p className="lede">
+            Daily pain signals and industry catalysts pulled from Hacker News, Reddit, and tech news — clustered and summarized for builders.
+          </p>
+
+          <div className="section-title">What you get</div>
+          <ul className="bullets">
+            <li>Top pain clusters (with evidence)</li>
+            <li>What’s rising since yesterday</li>
+            <li>Catalysts creating new problems</li>
+            <li>One buildable wedge</li>
+          </ul>
+
+          <div className="divider" />
+
+          <div className="sample" aria-label="Today’s sample signal">
+            <div className="sample-label">— Today’s signal</div>
+            <p>
+              <strong>Teams want dead-simple uptime monitoring — not another observability platform.</strong>
+            </p>
+            <p>
+              DevOps engineers are building their own scripts because existing tools feel bloated for basic uptime checks.
+            </p>
+            <p>
+              <span style={{ color: "var(--muted-2)" }}>Possible wedge:</span> 5-minute setup monitoring with opinionated defaults.
+            </p>
           </div>
-          <div className="form-group">
-            <label>Interests (pick at least one)</label>
-            <div className="interests-grid">
-              {interests.map((i) => (
-                <button
-                  key={i.id}
-                  type="button"
-                  className={`interest-chip ${selected.has(i.id) ? "selected" : ""}`}
-                  onClick={() => toggle(i.id)}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(i.id)}
-                    readOnly
-                    aria-hidden
-                  />
-                  {i.name}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={status === "loading"}>
-            {status === "loading" ? "Signing up…" : "Subscribe"}
-          </button>
-          {message && status === "error" && (
-            <div className="message error">{message}</div>
+        </div>
+
+        <aside className="panel" aria-label="Signup">
+          <h2>Get the digest</h2>
+          <p className="hint">
+            One email. Once a day. Unsubscribe anytime.
+          </p>
+
+          {status === "success" ? (
+            <div className="message success">{message}</div>
+          ) : (
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label htmlFor="email" style={{ fontFamily: "var(--font-mono)", letterSpacing: "0.08em", textTransform: "uppercase", fontSize: "0.78rem" }}>
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === "loading"}
+                  autoComplete="email"
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ fontFamily: "var(--font-mono)", letterSpacing: "0.08em", textTransform: "uppercase", fontSize: "0.78rem" }}>
+                  Pick interests
+                </label>
+                <div className="interests-grid">
+                  {interests.map((i) => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      className={`interest-chip ${selected.has(i.id) ? "selected" : ""}`}
+                      onClick={() => toggle(i.id)}
+                      title={i.description ?? undefined}
+                    >
+                      <input type="checkbox" checked={selected.has(i.id)} readOnly aria-hidden />
+                      <span>{i.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary" disabled={status === "loading"} style={{ width: "100%" }}>
+                {status === "loading" ? "Subscribing…" : "Subscribe"}
+              </button>
+              {message && status === "error" && <div className="message error">{message}</div>}
+
+              <div className="microcopy">No spam. No fluff. Signals only.</div>
+
+              <div style={{ marginTop: "0.9rem", color: "var(--muted-2)", fontSize: "0.92rem" }}>
+                Want to see the format first? <a href="/preview">View a sample report</a>.
+              </div>
+            </form>
           )}
-        </form>
-      )}
+        </aside>
+      </section>
 
-      <p style={{ marginTop: "2rem", fontSize: "0.9rem", color: "var(--muted)" }}>
-        <a href="/preview">Preview a past report</a>
-      </p>
+      <div className="footerline" role="contentinfo" aria-label="Credibility">
+        <span>
+          <b>Built by builders.</b>
+        </span>
+        <span>Scans thousands of posts daily.</span>
+      </div>
     </main>
   );
 }

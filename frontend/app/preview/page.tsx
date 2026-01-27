@@ -1,11 +1,11 @@
 "use client";
 
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
 
-export default function PreviewPage() {
+function PreviewInner() {
   const searchParams = useSearchParams();
   const queryDate = searchParams.get("date") || "";
   const [date, setDate] = useState(queryDate || new Date().toISOString().slice(0, 10));
@@ -21,14 +21,14 @@ export default function PreviewPage() {
     }
     setLoading(true);
     setError("");
-    const { data, err } = await supabase
+    const { data, error } = await supabase
       .from("daily_reports")
       .select("markdown_content")
       .eq("date", d)
       .maybeSingle();
     setLoading(false);
-    if (err) {
-      setError(err.message || "Failed to load report.");
+    if (error) {
+      setError(error.message || "Failed to load report.");
       setMarkdown(null);
       return;
     }
@@ -47,10 +47,24 @@ export default function PreviewPage() {
 
   return (
     <main className="container">
-      <h1>Preview</h1>
-      <p className="subtitle">View a daily report by date.</p>
+      <div className="header">
+        <div className="brand">
+          <div className="logo" aria-hidden />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.1 }}>Unmet</div>
+            <div style={{ color: "var(--muted-2)", fontSize: "0.9rem" }}>Report preview</div>
+          </div>
+        </div>
+        <div className="toplinks">
+          <a href="/">Signup</a>
+        </div>
+      </div>
 
-      <div className="preview-date">
+      <h1 style={{ marginTop: 0 }}>Preview</h1>
+      <p className="subtitle">Pick a date to load that day’s report.</p>
+
+      <div className="card" style={{ marginBottom: "1.25rem" }}>
+        <div className="preview-date" style={{ marginBottom: 0 }}>
         <label htmlFor="date">Date</label>
         <input
           id="date"
@@ -62,18 +76,23 @@ export default function PreviewPage() {
           Load
         </button>
       </div>
+      </div>
 
       {loading && <p style={{ color: "var(--muted)" }}>Loading…</p>}
       {error && !loading && <div className="message error">{error}</div>}
       {markdown && !loading && (
-        <article className="prose">
+        <article className="prose card">
           <ReactMarkdown>{markdown}</ReactMarkdown>
         </article>
       )}
-
-      <p style={{ marginTop: "2rem", fontSize: "0.9rem", color: "var(--muted)" }}>
-        <a href="/">Back to signup</a>
-      </p>
     </main>
+  );
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={<main className="container"><p style={{ color: "var(--muted)" }}>Loading preview…</p></main>}>
+      <PreviewInner />
+    </Suspense>
   );
 }
