@@ -174,26 +174,3 @@ def run_report(target_date: str | None = None) -> str:
     out_path.write_text(md, encoding="utf-8")
     logger.info("Report for %s written to %s", d, out_path)
     return md
-
-
-# Fix: _cluster_items_for_date uses db.get_conn but we're inside the run package; get_conn is in db module. We already import db, so db.get_conn is correct. But get_conn is a context manager that yields conn - we're using it with "with db.get_conn() as conn" - we need to make sure we're calling it correctly. We have "with db.get_conn() as conn" - but get_conn is from unittest.db. Let me check - we have "from .. import db" so db.get_conn works. But in _cluster_items_for_date we're not in a with-block for get_conn - we're calling get_conn and then using conn. So we need "with db.get_conn() as conn: ...". I wrote "with db.get_conn() as conn:" and then cur = conn.cursor() etc. So we're good. But wait - we're calling get_conn from db - and the run/runner imports db. So we need to use the same pattern as in db.py. We have "with get_conn() as conn" in db.py. So from run/runner we do "with db.get_conn() as conn:". But get_conn is not exported from db by default - we need to check. Looking at db.py we define get_conn at module level. So db.get_conn exists. Good.
-
-One bug: in _cluster_items_for_date I'm using db.get_conn - but that's the module we imported. So we need to actually use it. I wrote "with db.get_conn() as conn:" - we need to add that. Let me look at my _cluster_items_for_date again. I wrote:
-  with db.get_conn() as conn:
-    cur = conn.cursor()
-    ...
-  rows = cur.fetchall()
-So rows is inside the with block - we need rows = cur.fetchall() before exiting. So the structure is:
-  with db.get_conn() as conn:
-    cur = conn.cursor()
-    cur.execute(...)
-    rows = cur.fetchall()
-  out = {}
-  for r in rows: ...
-That's correct. Good.
-
-Remove the stray "from .. import db as db_module" in run_report.
-</think>
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-StrReplace

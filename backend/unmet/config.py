@@ -34,10 +34,12 @@ SUPABASE_DB_URL = _str("SUPABASE_DB_URL")
 # Gemini
 GEMINI_API_KEY = _str("GEMINI_API_KEY")
 
-# Reddit (PRAW)
+# Reddit: PRAW (official API, needs approval) or Apify (no Reddit approval)
 REDDIT_CLIENT_ID = _str("REDDIT_CLIENT_ID")
 REDDIT_CLIENT_SECRET = _str("REDDIT_CLIENT_SECRET")
 REDDIT_USER_AGENT = _str("REDDIT_USER_AGENT") or "UnmetNewsletter/1.0"
+APIFY_API_TOKEN = _str("APIFY_API_TOKEN")
+APIFY_REDDIT_ACTOR = _str("APIFY_REDDIT_ACTOR") or "trudax/reddit-scraper"
 
 # Ingest limits (tunable via env)
 HN_TOP_LIMIT = _int("HN_TOP_LIMIT", 100)

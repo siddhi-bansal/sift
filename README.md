@@ -4,7 +4,7 @@ Daily digest of **pain signals** (complaints, unmet needs, workflows people hate
 
 ## Product concept
 
-- **Sources:** HN (Firebase API), Reddit (PRAW, subreddits from subscriber interests), RSS (feeds from interests).
+- **Sources:** HN (Firebase API), Reddit (Apify scrapers or PRAW; subreddits from subscriber interests), RSS (feeds from interests).
 - **Pain signals:** Heuristic + Gemini classification (PAIN / DISCUSSION / NEWS / OTHER), then clustering (embeddings or TF-IDF). Cluster summarization and “rising” vs previous day.
 - **Catalyst signals:** From news items (RSS), 3–7 bullets with “what problems it may create.”
 - **Output:** Top Pain Clusters, Rising Pain Signals, Catalyst Signals, Wildcard. Stored in `daily_reports` and written to `/out/YYYY-MM-DD.md`.
@@ -63,7 +63,10 @@ Fill in:
 - `SUPABASE_SERVICE_ROLE_KEY` — service_role key (backend only)
 - `SUPABASE_DB_URL` — Postgres connection string (preferred for backend)
 - `GEMINI_API_KEY` — from [Google AI Studio](https://aistudio.google.com/apikey)
-- `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` — from [Reddit app](https://www.reddit.com/prefs/apps) (optional; omit to skip Reddit)
+- **Reddit:** use either **Apify** (no Reddit approval) or **PRAW** (official API).  
+  - Apify: `APIFY_API_TOKEN` from [Apify Console → Integrations](https://console.apify.com/settings/integrations); optional `APIFY_REDDIT_ACTOR` (default `trudax/reddit-scraper`).  
+  - PRAW: `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` from [Reddit app](https://www.reddit.com/prefs/apps).  
+  If `APIFY_API_TOKEN` is set, Reddit ingest uses Apify; otherwise it uses PRAW when Reddit credentials are present.
 
 **Frontend:**
 
@@ -203,7 +206,7 @@ jobs:
           cd backend && python -m unmet run --date $TODAY
 ```
 
-Add the same env vars as repo **Secrets**. Adjust paths if your workflow runs from repo root.
+Add the same env vars as repo **Secrets**. For Reddit, use either `APIFY_API_TOKEN` (Apify) or `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` (PRAW). Adjust paths if your workflow runs from repo root.
 
 ---
 

@@ -5,7 +5,9 @@ import logging
 from datetime import date, datetime, timezone
 
 from .. import db
+from ..config import APIFY_API_TOKEN
 from .hn import fetch_hn_stories
+from .reddit_apify import fetch_reddit_via_apify
 from .reddit_ingest import fetch_reddit_posts
 from .rss_ingest import fetch_rss_items
 
@@ -38,10 +40,14 @@ def run_ingest(target_date: str | None = None) -> int:
     except Exception as e:
         logger.exception("HN ingest failed: %s", e)
 
-    # Reddit
+    # Reddit: Apify (no Reddit approval) if APIFY_API_TOKEN set, else PRAW
     if subreddits:
         try:
-            for row in fetch_reddit_posts(subreddits):
+            if APIFY_API_TOKEN:
+                rows = fetch_reddit_via_apify(subreddits)
+            else:
+                rows = fetch_reddit_posts(subreddits)
+            for row in rows:
                 rid = db.upsert_raw_item(add_fetched(row))
                 if rid:
                     counts["reddit"] += 1
