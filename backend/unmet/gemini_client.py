@@ -774,6 +774,19 @@ def _evidence_comment_permalink_ratio(evidence: list[Any]) -> float:
     return with_comment / len(normalized)
 
 
+def _count_hn_comment_permalinks(evidence: list[Any]) -> int:
+    """Count evidence bullets with valid HN comment permalink (news.ycombinator.com/item?id=). GitHub/blogs/post-only do not count."""
+    if not evidence:
+        return 0
+    count = 0
+    for e in evidence:
+        n = _normalize_evidence_item(e) if not isinstance(e, dict) else e
+        url = (n.get("comment_url") or "").strip()
+        if url and "news.ycombinator.com/item?id=" in url:
+            count += 1
+    return count
+
+
 def compose_startup_grade_cards(
     pain_clusters: list[dict[str, Any]],
     catalysts: list[dict[str, Any]],
@@ -821,10 +834,14 @@ HARD RULES:
 10) If evidence is weak (post-only, no comment permalinks, vague claims), say so and lower confidence.
 
 OUTPUT FORMAT (STRICT). Output valid JSON array only, no markdown. 3–5 cards. Each card:
+- Keep "problem" abstract and phenomenon-focused (e.g. "AI-generated code often contains predictable, exploitable security flaws."). Do NOT require who is blocked in the problem sentence.
+- Include "who_is_affected": a short list or sentence naming impacted roles (e.g. AppSec teams, product engineers using AI tools, engineering managers). At least one concrete role or team, not just "developers".
+
 {{
   "title": "Problem Title (failure-mode phrasing)",
   "hook": "8–14 words",
-  "problem": "One sentence.",
+  "problem": "One sentence, abstract/phenomenon-focused.",
+  "who_is_affected": "Short list or sentence: impacted roles or user types (e.g. AppSec teams, product engineers, engineering managers).",
   "evidence": [
     {{ "quote": "short quote or paraphrase", "post_url": "https://news.ycombinator.com/item?id=POST_ID", "comment_url": "https://news.ycombinator.com/item?id=COMMENT_ID or null" }},
     ...
@@ -872,6 +889,12 @@ Catalysts:
                 wedge_out = {"icp": "", "mvp": "", "why_they_pay": "", "first_channel": "", "anti_feature": ""}
             evidence_raw = card.get("evidence") or []
             evidence_normalized = [_normalize_evidence_item(e) for e in evidence_raw][:5]
+            who_pays_str = str(card.get("who_pays") or "").strip()[:200]
+            icp_str = str(wedge_out.get("icp") or "").strip()
+            who_is_affected = (card.get("who_is_affected") or "").strip()
+            if not who_is_affected or who_is_affected.lower() in ("developers", "developer"):
+                who_is_affected = who_pays_str or icp_str or "Engineering teams"
+            who_is_affected = who_is_affected[:300]
             conf = (card.get("confidence") or "med").strip().lower()
             if conf not in ("low", "med", "high"):
                 conf = "med"
@@ -882,18 +905,25 @@ Catalysts:
             elif ratio < EVIDENCE_COMMENT_PERMALINK_MIN_RATIO and conf == "med":
                 conf = "low"
                 logger.info("evidence_comment_permalink_ratio=%.2f < %.2f; downgraded confidence to low", ratio, EVIDENCE_COMMENT_PERMALINK_MIN_RATIO)
+            hn_comment_count = _count_hn_comment_permalinks(evidence_normalized)
+            card_warnings: list[str] = []
+            if hn_comment_count < 2:
+                conf = "low"
+                card_warnings.append("Limited comment-level evidence; confidence capped at low.")
             out.append({
                 "title": str(card.get("title") or "")[:200],
                 "hook": str(card.get("hook") or "")[:500],
                 "problem": str(card.get("problem") or "")[:500],
+                "who_is_affected": who_is_affected,
                 "evidence": evidence_normalized,
-                "who_pays": str(card.get("who_pays") or "")[:200],
+                "who_pays": who_pays_str,
                 "why_existing_tools_fail": str(card.get("why_existing_tools_fail") or "").strip()[:300],
                 "stakes": [str(s).strip()[:200] for s in (card.get("stakes") or [])][:5],
                 "why_now": [str(w).strip()[:300] for w in (card.get("why_now") or [])][:5],
                 "wedge": wedge_out,
                 "confidence": conf,
                 "kill_criteria": str(card.get("kill_criteria") or "").strip()[:300],
+                "_warnings": card_warnings,
             })
         return out
     except Exception as e:

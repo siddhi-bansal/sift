@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
 import MascotLoading from "@/components/MascotLoading";
@@ -89,9 +90,16 @@ function PreviewInner() {
           </div>
         )}
         {markdown && !loading && (
-          <article className="prose card">
-            <ReactMarkdown>{markdown}</ReactMarkdown>
-          </article>
+          <>
+            <div className="card" style={{ marginBottom: "1rem" }}>
+              <Link href={`/preview/email/${date}`} className="btn btn-primary">
+                View Email Preview
+              </Link>
+            </div>
+            <article className="prose card">
+              <ReactMarkdown>{markdown}</ReactMarkdown>
+            </article>
+          </>
         )}
       </main>
     </>

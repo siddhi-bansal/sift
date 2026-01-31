@@ -331,7 +331,7 @@ def run_report(target_date: str | None = None) -> str:
                 validation_rejects.append({"title": repaired.get("title") or "", "errors": hard2 + soft2})
                 logger.info("buildability_hard_fail_after_repair card idx=%s title=%s", i, (repaired.get("title") or "")[:50])
                 continue
-            repaired["_warnings"] = list(warnings) + list(warnings2) + list(soft2)
+            repaired["_warnings"] = list(card.get("_warnings") or []) + list(warnings) + list(warnings2) + list(soft2)
             idea_cards.append(repaired)
             logger.info("buildability_pass_after_repair card idx=%s title=%s warnings=%s", i, (repaired.get("title") or "")[:50], repaired.get("_warnings"))
         else:

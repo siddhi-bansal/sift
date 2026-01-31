@@ -468,11 +468,13 @@ def validate_startup_grade_card_split(
 
     if not problem:
         hard.append("problem required")
-    else:
-        pl = problem.lower()
-        has_who = any(p in pl for p in (" who ", " whom ", " teams ", " they ", " engineers ", " developers ", " founders ", " ops ", " platform ", " sec ", " sre ", " appsec "))
-        if not has_who:
-            soft.append("problem should include who is blocked (who/teams/role)")
+
+    # ---- Who is affected: must be present and non-generic (do not drop if missing; infer in generator)
+    who_is_affected = (card.get("who_is_affected") or "").strip()
+    if not who_is_affected:
+        soft.append("who_is_affected missing")
+    elif who_is_affected.lower() in ("developers", "developer"):
+        soft.append("who_is_affected must name concrete roles or teams (not just 'developers')")
 
     # ---- Evidence: missing or no post_url -> HARD; invented links -> HARD; wrong shape / no comment_url -> SOFT/warning
     if evidence is None or not isinstance(evidence, list):
@@ -664,6 +666,10 @@ def format_startup_grade_card(
     lines.append("")
     lines.append(f"**Problem:** {card.get('problem') or ''}")
     lines.append("")
+    who_affected = (card.get("who_is_affected") or "").strip()
+    if who_affected:
+        lines.append(f"**Who is affected:** {who_affected}")
+        lines.append("")
     evidence = card.get("evidence") or []
     if evidence:
         lines.append("**Evidence:**")
