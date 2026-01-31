@@ -94,7 +94,31 @@ a:hover {
   }
 }
 
-/* ---- Header ---- */
+/* ---- Top navigation bar ---- */
+.nav-bar {
+  width: 100%;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.nav-bar__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .nav-bar__inner {
+    padding: 0.875rem 2rem;
+  }
+}
+
+/* ---- Header (legacy / when used inside container) ---- */
 .header {
   display: flex;
   align-items: center;
@@ -107,21 +131,30 @@ a:hover {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.brand:hover {
+  color: inherit;
 }
 
 .masthead-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text);
   margin: 0;
+  line-height: 1.1;
 }
 
 .masthead-tagline {
-  color: var(--muted-2);
-  font-size: 0.85rem;
-  margin: 0.25rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0.2rem 0 0;
+  letter-spacing: -0.01em;
 }
 
 .logo {
@@ -157,9 +190,9 @@ a:hover {
 
 @media (min-width: 900px) {
   .hero-section {
-    grid-template-columns: 1fr auto;
-    gap: 3rem;
-    padding: 3rem 0 4rem;
+    grid-template-columns: 1fr minmax(200px, 280px);
+    gap: 1.5rem;
+    padding: 2.5rem 0 3.5rem;
   }
 }
 
@@ -196,15 +229,87 @@ a:hover {
 
 .hero-mascot-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 1rem;
   min-height: 200px;
 }
 
 @media (min-width: 900px) {
   .hero-mascot-wrap {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
     min-height: 260px;
   }
+}
+
+.hero-mascot {
+  flex-shrink: 0;
+}
+
+/* Hero signup — small rectangle next to mascot */
+.hero-signup {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 280px;
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+.hero-signup__label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+
+.hero-signup__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hero-signup__input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-2);
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.hero-signup__input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.hero-signup__btn {
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.hero-signup__error {
+  font-size: 0.75rem;
+  color: #fca5a5;
+  margin: 0;
+}
+
+.hero-signup__success {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.4;
 }
 
 /* ---- Cards (rounded, subtle gradient) ---- */
@@ -515,4 +620,117 @@ a:hover {
   color: var(--muted);
   font-size: 1rem;
   margin: 0 0 1.5rem;
+}
+
+/* ---- Mascot animations ---- */
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes mascot-blink {
+  0%, 45%, 55%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---- Idea Card (horizontal strip item) ---- */
+.idea-card {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.idea-card--snap {
+  scroll-snap-align: start;
+}
+
+.idea-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.idea-card__tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--primary-soft);
+  border-radius: 6px;
+}
+
+.idea-card__title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.idea-card__summary {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ---- Empty state ---- */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  max-width: 24rem;
+  margin: 0 auto;
+}
+
+.empty-state__mascot {
+  margin-bottom: 1rem;
+}
+
+.empty-state__title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.empty-state__desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.empty-state__action {
+  margin-top: 1rem;
+}
+
+/* ---- Mascot loading ---- */
+.mascot-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  gap: 1rem;
+}
+
+.mascot-loading__mascot {
+  animation: mascot-float 2s ease-in-out infinite;
+}
+
+.mascot-loading__text {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin: 0;
 }

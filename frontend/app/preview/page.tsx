@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
+import MascotLoading from "@/components/MascotLoading";
 
 function PreviewInner() {
   const searchParams = useSearchParams();
@@ -46,52 +47,73 @@ function PreviewInner() {
   const go = () => fetchReport(date);
 
   return (
-    <main className="container">
-      <div className="header">
-        <div className="brand">
-          <div className="logo" aria-hidden />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.1 }}>Unmet</div>
-            <div style={{ color: "var(--muted-2)", fontSize: "0.9rem" }}>Report preview</div>
+    <>
+      <header className="nav-bar" role="banner">
+        <div className="nav-bar__inner">
+          <a href="/" className="brand" aria-label="Unmet home">
+            <img src="/unmet-logo.png" alt="" className="logo" />
+            <div>
+              <span className="masthead-title">Unmet</span>
+              <p className="masthead-tagline">Report preview</p>
+            </div>
+          </a>
+          <nav className="toplinks" aria-label="Main navigation">
+            <a href="/">Home</a>
+          </nav>
+        </div>
+      </header>
+
+      <main className="container">
+        <h1 style={{ marginTop: 0, fontFamily: "var(--font-display)" }}>Preview</h1>
+        <p className="subtitle">Pick a date to load that day&apos;s report.</p>
+
+        <div className="card" style={{ marginBottom: "1.5rem" }}>
+          <div className="preview-date" style={{ marginBottom: 0 }}>
+            <label htmlFor="date">Date</label>
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <button type="button" className="btn btn-primary" onClick={go} style={{ marginLeft: "0.5rem" }}>
+              Load
+            </button>
           </div>
         </div>
-        <div className="toplinks">
-          <a href="/">Signup</a>
-        </div>
-      </div>
 
-      <h1 style={{ marginTop: 0 }}>Preview</h1>
-      <p className="subtitle">Pick a date to load that day’s report.</p>
-
-      <div className="card" style={{ marginBottom: "1.25rem" }}>
-        <div className="preview-date" style={{ marginBottom: 0 }}>
-        <label htmlFor="date">Date</label>
-        <input
-          id="date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <button type="button" className="btn btn-primary" onClick={go} style={{ marginLeft: "0.5rem" }}>
-          Load
-        </button>
-      </div>
-      </div>
-
-      {loading && <p style={{ color: "var(--muted)" }}>Loading…</p>}
-      {error && !loading && <div className="message error">{error}</div>}
-      {markdown && !loading && (
-        <article className="prose card">
-          <ReactMarkdown>{markdown}</ReactMarkdown>
-        </article>
-      )}
-    </main>
+        {loading && <MascotLoading message="Finding that report…" />}
+        {error && !loading && (
+          <div className="message error" role="alert">
+            {error}
+          </div>
+        )}
+        {markdown && !loading && (
+          <article className="prose card">
+            <ReactMarkdown>{markdown}</ReactMarkdown>
+          </article>
+        )}
+      </main>
+    </>
   );
 }
 
 export default function PreviewPage() {
   return (
-    <Suspense fallback={<main className="container"><p style={{ color: "var(--muted)" }}>Loading preview…</p></main>}>
+    <Suspense
+      fallback={
+        <>
+          <header className="nav-bar" role="banner">
+            <div className="nav-bar__inner">
+              <span className="masthead-title">Unmet</span>
+            </div>
+          </header>
+          <main className="container">
+            <MascotLoading message="Loading preview…" />
+          </main>
+        </>
+      }
+    >
       <PreviewInner />
     </Suspense>
   );
