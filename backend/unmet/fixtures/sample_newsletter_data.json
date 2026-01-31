@@ -1,0 +1,53 @@
+{
+  "date": "2026-01-27",
+  "clusters": [
+    {
+      "id": "cluster-1",
+      "title": "Devs frustrated with broken CI logs and opaque failures",
+      "summary": "Several posts describe CI pipelines where the only signal is 'failed' and logs are huge or truncated. People waste hours comparing runs.",
+      "persona": "Backend engineers and platform folks",
+      "why_matters": "Time sink and deployment friction; hard to ship quickly when you can't see why something broke.",
+      "size": 6,
+      "score": 0.62,
+      "items": [
+        {"title": "Why do we still get 10MB log dumps when the only useful line is 'assert failed'?", "text": "Spent an hour comparing two runs. Our CI just dumps everything.", "url": "https://example.com/ci-logs-1"},
+        {"title": "CI failure with no clear cause", "text": "Pipeline says failed but the logs are truncated. How do you debug this?", "url": "https://example.com/ci-logs-2"},
+        {"title": "Struggling to find the actual error in Azure DevOps logs", "text": "Huge JSON logs, no way to filter to the failing step.", "url": "https://example.com/ci-logs-3"}
+      ]
+    },
+    {
+      "id": "cluster-2",
+      "title": "Solo founders overwhelmed by ops and support",
+      "summary": "People running one-person SaaS describe being stuck on tickets, server alerts, and billing instead of building.",
+      "persona": "Solo founders and tiny teams",
+      "why_matters": "Context-switching kills focus; support load scales with users but not with help.",
+      "size": 4,
+      "score": 0.58,
+      "items": [
+        {"title": "How do you handle support when you're the only one?", "text": "I'm drowning in emails and can't ship. Customers expect replies in hours.", "url": "https://example.com/support-1"},
+        {"title": "Alert fatigue as a solo dev", "text": "Every night something triggers. I need to sleep but also keep the app up.", "url": "https://example.com/support-2"}
+      ]
+    }
+  ],
+  "catalysts": [
+    {
+      "title": "New EU rules push deadline for AI system disclosures",
+      "summary": "Companies must document high-risk AI systems and show human oversight. Many teams lack tooling to generate audits.",
+      "interests": ["AI/ML", "Compliance"],
+      "problems_created": "Audit trails and evidence of human-in-the-loop are now required; spreadsheets don't scale.",
+      "source_urls": ["https://example.com/eu-ai-1", "https://example.com/eu-ai-2"]
+    },
+    {
+      "title": "Major provider announces price hike for managed Postgres",
+      "summary": "List prices up 20–30% for reserved instances. Teams are re-evaluating lock-in and migration cost.",
+      "interests": ["Infrastructure", "SaaS"],
+      "problems_created": "Migration and re-architecting decisions under time pressure; vendor comparison is painful.",
+      "source_urls": ["https://example.com/pg-pricing"]
+    }
+  ],
+  "wildcard": {
+    "title": "We switched from X to Y and it was fine",
+    "text": "Took a week. No major issues. Just one data gotcha we fixed with a script.",
+    "url": "https://example.com/wildcard-1"
+  }
+}

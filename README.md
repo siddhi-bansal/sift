@@ -2,14 +2,78 @@
 
 Daily digest of **pain signals** (complaints, unmet needs, workflows people hate) and **catalyst signals** (industry news that creates urgency or new problems). We ingest from Hacker News, Reddit, and RSS; cluster and summarize with Gemini; and produce a markdown newsletter.
 
+## Pipeline overview
+
+**Ingest** pulls posts from HN, Reddit, and RSS (sources from Supabase) and writes them to `raw_items`. **Analyze** scores and labels each item (PAIN / DISCUSSION / NEWS / OTHER), keeps PAIN/DISCUSSION, embeds (or TF-IDF) and clusters them, then writes `clusters` and `cluster_items`. **Run** summarizes each cluster and news items with Gemini, computes rising clusters vs the previous day and picks a wildcard, then rewrites every item into the strict newsletter template (evidence-grounded, no hallucinations). The final markdown is written to `daily_reports` and `/out/YYYY-MM-DD.md`.
+
+```mermaid
+flowchart LR
+  subgraph Ingest
+    HN[HN] --> RI[raw_items]
+    Reddit[Reddit] --> RI
+    RSS[RSS] --> RI
+  end
+  subgraph Analyze
+    RI --> PS[Pain score + label]
+    PS --> PAIN[PAIN/DISCUSSION]
+    PAIN --> EMB[Embed or TF-IDF]
+    EMB --> CL[Clusters]
+    CL --> CI[cluster_items]
+  end
+  subgraph Run
+    CI --> SUM[Summarize clusters]
+    RI --> CAT[Catalyst bullets]
+    SUM --> STYLE[newsletter_style]
+    CAT --> STYLE
+    STYLE --> MD[Markdown report]
+    MD --> DR[daily_reports]
+    MD --> OUT[/out/YYYY-MM-DD.md]
+  end
+```
+
 ## Product concept
 
 - **Sources:** HN (Firebase API), Reddit (Apify scrapers or PRAW; subreddits from subscriber interests), RSS (feeds from interests).
 - **Pain signals:** Heuristic + Gemini classification (PAIN / DISCUSSION / NEWS / OTHER), then clustering (embeddings or TF-IDF). Cluster summarization and “rising” vs previous day.
 - **Catalyst signals:** From news items (RSS), 3–7 bullets with “what problems it may create.”
-- **Output:** Top Pain Clusters, Rising Pain Signals, Catalyst Signals, Wildcard. Stored in `daily_reports` and written to `/out/YYYY-MM-DD.md`.
+- **Output:** Top Pain Clusters (max 5), Rising Pain Signals (max 3), Catalyst Signals (max 5), Wildcard (1). Stored in `daily_reports` and written to `/out/YYYY-MM-DD.md`. Each item follows a strict template: bold hook, explanation, bullets, who, wedge, evidence snippets + links. See **Newsletter format & grounding** below.
 
 Interests, subreddits, and RSS feeds are **stored in Supabase** and seeded via a script — no hardcoding in app logic.
+
+### Newsletter format & grounding
+
+Newsletter output is **skimmable**, **plain English**, **builder lens**, and **non-hallucinatory**:
+
+- **Intro:** 2–3 lines explaining what Unmet is and that every claim is tied to evidence.
+- **Pattern language:** A short “Today clusters around: …” line derived from today’s cluster and catalyst themes.
+- **Per-item template (pain cluster, rising, catalyst, wildcard):**
+  - **Bold hook** (8–14 words, no “This article…”)
+  - 1–2 sentence explanation (evidence-grounded)
+  - 2–3 “why this is interesting” bullets
+  - **Who** (persona) and **Possible wedge** (plausible, grounded)
+  - **Evidence:** 1–3 ultra-short verbatim snippets (≤12 words each) or titles, plus up to 3 links
+  - **Signal strength** (pain/rising/wildcard) or **Impact** (catalysts): Low/Med/High from cluster size, pain/confidence, or catalyst interest/urgency
+- **One line I’d bet on:** One sentence at the end—the most buildable wedge of the day, or “Worth exploring: …” when signals are weak.
+
+**Grounding rules (no hallucinations):**
+
+- Every factual claim must be traceable to underlying items (title/text/snippet/comments).
+- Never invent tool names, company names, numbers, quotes, timelines, or causal claims.
+- Use guarded language when unsure: “Seems like…”, “One plausible read…”, “Could indicate…”
+- Banned phrases (e.g. “This highlights”, “This showcases”, “raises questions about”) are enforced; we use direct language instead.
+
+To preview the format without running the full pipeline:  
+`python -m unmet render_sample` — outputs a sample newsletter from fixtures in the new style (no API calls).
+
+### Scoring, Editor Gate, and Fallbacks
+
+- **Scope config:** `unmet/config.py` defines `NEWSLETTER_AUDIENCE` (B2B builders/devtools founders), `INCLUDED_TOPICS` (devtools, infra, security, data, AI ops, cloud, compliance, SaaS ops, observability, developer productivity, payments infra, platform engineering), and `EXCLUDED_TOPICS` (local human interest, agriculture/food giveaways, sports, celebrity, lifestyle, pure politics unless directly impacts tech compliance/operations). All ranking and selection functions reference this scope.
+- **Scoring:** Each raw item is classified and scored with one Gemini call (`classify_and_score_item`): label (PAIN/DISCUSSION/NEWS/OTHER), confidence, audience_fit, pain_intensity, actionability, evidence_spans (verbatim ≤12-word snippets), exclude_reason. We then compute **UnmetScore** = 0.35×audience_fit + 0.30×pain_intensity + 0.25×actionability + 0.10×confidence − noise_penalty. Noise penalties apply for "Show HN" non-PAIN, generic RSS with no pain evidence, and when exclude_reason is set. Only items with label in {PAIN, DISCUSSION}, audience_fit ≥ 0.65, (pain_intensity ≥ 0.50 or actionability ≥ 0.60), and confidence ≥ 0.55 pass the **candidate filter**. We keep the top N=50 by UnmetScore (configurable via `EDITOR_GATE_TOP_N`).
+- **Editor Gate:** One Gemini call per day selects which candidates make it into the newsletter: **featured_pain_ids**, **secondary_pain_ids**, **catalyst_ids**, and **rejects** (with reason: off-scope, weak evidence, not actionable, duplicate). Only items in featured + secondary pain ids are clustered and summarized; catalysts are gated separately. Rejects are logged (e.g. "Reject id=… reason=off-scope").
+- **Catalyst gating:** Catalysts must fit B2B/devtools; excluded topics (e.g. food giveaways, sports) are not included unless they directly impact tech compliance/operations. Each catalyst has a narrow buyer and specific problems; opportunity_wedge follows "Start with &lt;buyer&gt; who &lt;situation&gt;, build &lt;first feature&gt;" or "Unclear from evidence." We allow 0 catalysts if none pass.
+- **Editorial fallbacks:** If after filtering and editor gate there are &lt;2 good pain clusters, we publish **1 deep pain** (first cluster) plus **Watchlist themes** (2 short bullets from other clusters/themes) and skip the full "Rising" section. If no catalysts pass gating, we show **"No catalysts worth your attention today."** If clustering yields &lt;2 clusters, we skip the "Rising" section entirely (no "No clear risers today" boilerplate). We prefer shipping fewer, higher-quality items over filler.
+- **Evidence:** HN items get top comments fetched and stored in metadata; pain candidates get 2–4 **evidence_snippets** (pain-language extraction) saved to `raw_items.evidence_snippets`. Summaries and rewrite prompts use these snippets; every claim must be supported by evidence; when evidence is thin we output "Unclear from evidence."
+- **Embedding resilience:** Embedding runs in a subprocess (`python -m unmet.embed_worker input.json output.json`) so a segfault does not crash the main run. On failure we retry with smaller batch sizes (50 → 16 → 4). If embedding still fails, we fall back to TF-IDF for clustering and log clearly.
 
 ---
 
@@ -18,7 +82,7 @@ Interests, subreddits, and RSS feeds are **stored in Supabase** and seeded via a
 ```
 unmet/
 ├── backend/          # Python 3.11 pipeline + CLI
-│   ├── unmet/        # Package: ingest, analyze, run, db, gemini_client, seed_data
+│   ├── unmet/        # Package: ingest, analyze, run, db, gemini_client, newsletter_style, fixtures
 │   └── pyproject.toml
 ├── frontend/         # Next.js 14 (App Router) landing + signup + preview
 ├── supabase/
@@ -144,6 +208,12 @@ Then open `/preview?date=$TODAY` or read `out/$TODAY.md`.
 
 ```bash
 python -m unmet seed
+```
+
+**Render sample** (sample newsletter in the new style, no API):
+
+```bash
+python -m unmet render_sample
 ```
 
 ---

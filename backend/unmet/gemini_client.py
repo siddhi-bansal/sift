@@ -1,15 +1,28 @@
 """Gemini API: generate_content (via google-generativeai) and embeddings (via REST)."""
 from __future__ import annotations
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 import json
 import logging
+import subprocess
+import sys
+import tempfile
 import time
+from pathlib import Path
 from typing import Any
 
 import google.generativeai as genai
 import httpx
 
-from .config import GEMINI_API_KEY, GEMINI_TEXT_MODEL
+from .config import (
+    EXCLUDED_TOPICS,
+    GEMINI_API_KEY,
+    GEMINI_TEXT_MODEL,
+    INCLUDED_TOPICS,
+    NEWSLETTER_AUDIENCE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +100,164 @@ Content:
         return ("OTHER", 0.0)
 
 
+def classify_and_score_item(text: str, title: str = "") -> dict[str, Any]:
+    """
+    Classify and score one raw item. Returns dict with label, confidence, audience_fit,
+    pain_intensity, actionability, evidence_spans, exclude_reason.
+    If JSON parsing fails, falls back to classify_pain_label and sets scores to defaults.
+    """
+    included = ", ".join(INCLUDED_TOPICS[:8])
+    excluded = ", ".join(EXCLUDED_TOPICS[:6])
+    combined = f"Title: {title}\n\nBody: {text[:8000]}"
+    prompt = f"""Audience: {NEWSLETTER_AUDIENCE}. Included topics: {included}. Excluded: {excluded} (unless directly impacts tech compliance/operations).
+
+Classify this post/article. Output valid JSON only, no markdown, with these exact keys:
+- label: one of "PAIN" | "DISCUSSION" | "NEWS" | "OTHER"
+- confidence: 0.0–1.0 (be conservative; lower if unsure)
+- audience_fit: 0.0–1.0 (how well it fits B2B builders/devtools founders)
+- pain_intensity: 0.0–1.0
+- actionability: 0.0–1.0 (how actionable the pain/opportunity is)
+- evidence_spans: array of 0–5 short strings, each ≤12 words, copied VERBATIM from the content (quotes or phrases that support the label)
+- topic_tags: array of 2–5 short topic tags (single words or short phrases) that describe the main themes
+- claim_anchors: array of 1–3 verbatim phrases from the content, each ≤12 words, that SUPPORT the topic_tags (each tag must have at least one anchor)
+- exclude_reason: string or null (if off-scope or excluded, brief reason; otherwise null)
+
+Rules:
+- If audience_fit < 0.4 then label must be NEWS or OTHER unless the content is directly about software/dev work.
+- evidence_spans must be copied verbatim from the content; do not paraphrase.
+- ONLY add a topic_tag if at least one claim_anchor supports it. claim_anchors must be verbatim from the content, ≤12 words each.
+- Be conservative: lower confidence if unsure.
+
+Content:
+{combined[:6000]}
+"""
+    try:
+        out = generate_text(prompt)
+        raw = out.replace("```json", "").replace("```", "").strip()
+        d = json.loads(raw)
+        label = str(d.get("label", "OTHER")).upper()
+        if label not in ("PAIN", "DISCUSSION", "NEWS", "OTHER"):
+            label = "OTHER"
+        confidence = float(d.get("confidence", 0.5))
+        confidence = max(0.0, min(1.0, confidence))
+        audience_fit = d.get("audience_fit")
+        audience_fit = max(0.0, min(1.0, float(audience_fit))) if audience_fit is not None else 0.5
+        pain_intensity = d.get("pain_intensity")
+        pain_intensity = max(0.0, min(1.0, float(pain_intensity))) if pain_intensity is not None else 0.5
+        actionability = d.get("actionability")
+        actionability = max(0.0, min(1.0, float(actionability))) if actionability is not None else 0.5
+        evidence_spans = d.get("evidence_spans")
+        if not isinstance(evidence_spans, list):
+            evidence_spans = []
+        evidence_spans = [str(s).strip()[:200] for s in evidence_spans if s][:5]
+        topic_tags = d.get("topic_tags")
+        if not isinstance(topic_tags, list):
+            topic_tags = []
+        topic_tags = [str(t).strip() for t in topic_tags if t][:5]
+        claim_anchors = d.get("claim_anchors")
+        if not isinstance(claim_anchors, list):
+            claim_anchors = []
+        claim_anchors = [str(c).strip()[:200] for c in claim_anchors if c][:3]
+        claim_anchors = [" ".join(c.split()[:12]).strip() for c in claim_anchors]
+        exclude_reason = d.get("exclude_reason")
+        exclude_reason = str(exclude_reason).strip() or None if exclude_reason else None
+        return {
+            "label": label,
+            "confidence": confidence,
+            "audience_fit": audience_fit,
+            "pain_intensity": pain_intensity,
+            "actionability": actionability,
+            "evidence_spans": evidence_spans,
+            "topic_tags": topic_tags[:5],
+            "claim_anchors": claim_anchors[:3],
+            "exclude_reason": exclude_reason,
+        }
+    except (json.JSONDecodeError, TypeError, ValueError) as e:
+        logger.warning("classify_and_score_item parse failed, using fallback: %s", e)
+        label, conf = classify_pain_label(text, title)
+        return {
+            "label": label,
+            "confidence": conf,
+            "audience_fit": 0.0,
+            "pain_intensity": 0.0,
+            "actionability": 0.0,
+            "evidence_spans": [],
+            "topic_tags": [],
+            "claim_anchors": [],
+            "exclude_reason": "parse_fallback",
+        }
+
+
+def editor_gate_selection(candidates: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    One Gemini call per day: from top N candidates, select featured_pain_ids, secondary_pain_ids,
+    catalyst_ids, and rejects. Input: list of {id, title, url, label, confidence, audience_fit,
+    pain_intensity, actionability, evidence_spans}. Output: featured_pain_ids, secondary_pain_ids,
+    catalyst_ids, rejects (list of {id, reason}).
+    """
+    if not candidates:
+        return {"featured_pain_ids": [], "secondary_pain_ids": [], "catalyst_ids": [], "rejects": []}
+    included = ", ".join(INCLUDED_TOPICS[:8])
+    excluded = ", ".join(EXCLUDED_TOPICS[:6])
+    lines = []
+    for c in candidates[:50]:
+        sid = c.get("id") or c.get("raw_item_id")
+        lines.append(
+            f"id={sid} title={c.get('title','')[:80]} url={c.get('url','')} label={c.get('label')} "
+            f"audience_fit={c.get('audience_fit')} pain_intensity={c.get('pain_intensity')} actionability={c.get('actionability')} "
+            f"evidence={c.get('evidence_spans', [])[:2]}"
+        )
+    text = "\n".join(lines)
+    prompt = f"""Audience: {NEWSLETTER_AUDIENCE}. Included: {included}. Excluded: {excluded}.
+
+You are the editor. Select which items to feature in the newsletter. Output valid JSON only, no markdown:
+{{
+  "featured_pain_ids": ["uuid-or-id", ...],
+  "secondary_pain_ids": ["uuid-or-id", ...],
+  "catalyst_ids": ["uuid-or-id", ...],
+  "rejects": [{{"id": "uuid-or-id", "reason": "off-scope|weak evidence|not actionable|duplicate"}}, ...]
+}}
+
+Rules:
+- Prefer high audience_fit + high pain_intensity for featured_pain_ids.
+- Apply negative weight when selecting: avoid items whose evidence_spans or title suggest vague conclusions (e.g. "unclear from evidence", "not enough evidence")—prefer items with concrete evidence.
+- Do NOT select off-scope items (excluded topics).
+- Do NOT select duplicates (same URL or same topic).
+- If insufficient good items, select fewer; empty lists are OK.
+- Use the exact "id" values from the candidate list.
+
+Candidates:
+{text[:12000]}
+"""
+    try:
+        raw = generate_text(prompt)
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        d = json.loads(raw)
+        featured = [str(x) for x in (d.get("featured_pain_ids") or [])]
+        secondary = [str(x) for x in (d.get("secondary_pain_ids") or [])]
+        catalyst = [str(x) for x in (d.get("catalyst_ids") or [])]
+        rejects = d.get("rejects") or []
+        if not isinstance(rejects, list):
+            rejects = []
+        return {
+            "featured_pain_ids": featured,
+            "secondary_pain_ids": secondary,
+            "catalyst_ids": catalyst,
+            "rejects": rejects,
+        }
+    except (json.JSONDecodeError, TypeError) as e:
+        logger.warning("editor_gate_selection parse failed: %s", e)
+        # Fallback: treat all PAIN/DISCUSSION as featured, rest rejected
+        id_to_label = {str(c.get("id") or c.get("raw_item_id")): c.get("label") for c in candidates}
+        featured = [sid for sid, lb in id_to_label.items() if lb in ("PAIN", "DISCUSSION")][:20]
+        return {
+            "featured_pain_ids": featured,
+            "secondary_pain_ids": [],
+            "catalyst_ids": [],
+            "rejects": [{"id": sid, "reason": "parse_fallback"} for sid in id_to_label if sid not in featured],
+        }
+
+
 def embed_batch(texts: list[str], api_key: str | None = None) -> list[list[float]]:
     """Call Gemini embed REST API in batches. Returns list of embedding vectors."""
     key = api_key or GEMINI_API_KEY
@@ -128,6 +299,85 @@ def embed_single(text: str) -> list[float]:
     return embed_batch([text], GEMINI_API_KEY)[0]
 
 
+def embed_batch_with_retry(
+    texts: list[str],
+    api_key: str | None = None,
+    use_subprocess: bool = True,
+    batch_sizes: list[int] | None = None,
+) -> list[list[float]] | None:
+    """
+    Run embed_batch with retry on smaller batch sizes. If use_subprocess=True (default),
+    runs in subprocess so segfault/crash does not kill the main run.
+    On failure after all retries, returns None (caller should use TF-IDF fallback).
+    """
+    if not texts:
+        return []
+    batch_sizes = batch_sizes or [50, 16, 4]
+    last_err: Exception | None = None
+    for batch_size in batch_sizes:
+        try:
+            if use_subprocess and len(texts) > 1:
+                out: list[list[float]] = []
+                for i in range(0, len(texts), batch_size):
+                    chunk = texts[i : i + batch_size]
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as fin:
+                        json.dump(chunk, fin)
+                        input_path = fin.name
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as fout:
+                        output_path = fout.name
+                    try:
+                        proc = subprocess.run(
+                            [str(Path(sys.executable).resolve()), "-m", "unmet.embed_worker", input_path, output_path],
+                            capture_output=True,
+                            timeout=60 * (len(chunk) // 10 + 1),
+                            cwd=str(Path(__file__).resolve().parent.parent),
+                        )
+                        if proc.returncode != 0:
+                            logger.warning("embed_worker exit %s: %s", proc.returncode, proc.stderr.decode() if proc.stderr else "")
+                            raise RuntimeError(f"embed_worker exited {proc.returncode}")
+                        with open(output_path, encoding="utf-8") as f:
+                            embs = json.load(f)
+                        out.extend(embs)
+                    finally:
+                        Path(input_path).unlink(missing_ok=True)
+                        Path(output_path).unlink(missing_ok=True)
+                return out
+            return embed_batch(texts, api_key)
+        except Exception as e:
+            last_err = e
+            logger.warning("embed_batch_with_retry batch_size=%s failed: %s", batch_size, e)
+            continue
+    logger.error("embed_batch_with_retry failed after all batch sizes: %s", last_err)
+    return None
+
+
+def rename_to_match_evidence(title: str, evidence_snippets: list[str]) -> str:
+    """
+    If cluster title drifted from evidence, propose a new title that matches the snippets.
+    Returns JSON with key new_title (string).
+    """
+    if not evidence_snippets:
+        return title
+    snippets_text = "\n".join(f"- {s}" for s in (evidence_snippets or [])[:10])
+    prompt = f"""The cluster was titled "{title}" but the evidence snippets do not clearly support that topic.
+Propose a short, concrete title (one phrase, ≤12 words) that matches what the snippets actually say.
+Output valid JSON only, no markdown: {{ "new_title": "Your proposed title here" }}
+Use only themes directly supported by the snippets. Do not invent new topics.
+
+Snippets:
+{snippets_text[:4000]}
+"""
+    try:
+        out = generate_text(prompt)
+        raw = out.replace("```json", "").replace("```", "").strip()
+        d = json.loads(raw)
+        new = (d.get("new_title") or title or "").strip()[:200]
+        return new if new else title
+    except Exception as e:
+        logger.warning("rename_to_match_evidence failed: %s", e)
+        return title
+
+
 def summarize_cluster(
     title: str,
     summary: str,
@@ -135,22 +385,35 @@ def summarize_cluster(
     why_matters: str,
     example_links: list[str],
     item_snippets: list[str],
-) -> dict[str, str]:
-    """Produce title, 2–3 sentence summary, persona, why_matters, 3–5 example links."""
-    snippets = "\n".join(item_snippets[:15][:12000])
-    prompt = f"""You are writing a newsletter section for "pain signals" – real complaints and unmet needs from the web.
+) -> dict[str, Any]:
+    """
+    Produce cluster write-up. Schema: title, moment_of_pain, summary (2 sentences),
+    persona (narrow), stakes (bullets), what_people_do_now, example_urls.
+    Must reference at least 2 distinct snippets; if insufficient evidence return "Insufficient evidence" title.
+    """
+    snippets = "\n".join(item_snippets[:15])[:12000]
+    prompt = f"""You may make bounded inferences that logically follow from the evidence, as long as they are marked with tentative language ('suggests', 'likely means', 'points to', 'one plausible read') and grounded in the provided snippets. Do NOT invent new facts. Only use 'Insufficient evidence' if no reasonable inference about buyer or problem shape can be made.
 
-Based on these post snippets, produce a short cluster write-up in JSON with keys: title, summary, persona, why_matters, example_urls.
-- title: short, concrete theme (e.g. "Devs frustrated with X").
-- summary: 2–3 sentences capturing the main pain.
-- persona: who is affected (e.g. "Backend engineers", "SaaS founders").
-- why_matters: workaround cost, time sink, compliance, money loss, or other stakes.
-- example_urls: array of 3–5 URLs from the snippets to use as links (use only URLs that appear in the snippets).
+You are writing a newsletter section for "pain signals" – real complaints and unmet needs from the web.
+Every claim must be grounded in the snippets below. Do not invent details.
+
+Bad: "Unclear from evidence."
+Good: "Snippets show X, which suggests Y is becoming a recurring bottleneck."
+
+Output valid JSON only, no markdown, with these exact keys:
+- title: short, concrete theme (e.g. "Devs frustrated with X"). If you cannot ground the theme in at least 2 distinct snippets, use title "Insufficient evidence".
+- moment_of_pain: 1 sentence scenario (what happens / what hurts).
+- summary: exactly 2 sentences capturing the main pain.
+- persona: narrow persona (e.g. "Backend engineers on legacy monoliths", "SaaS founders with PLG motion").
+- stakes: array of 2–4 short bullet strings (workaround cost, time sink, compliance, money loss).
+- what_people_do_now: 1 sentence (current workaround or coping).
+- example_urls: array of URLs that appear in the snippets (use only URLs from snippets), max 5.
+
+Rules: Reference at least 2 distinct snippets from the content. No invented details. If insufficient evidence, set title to "Insufficient evidence" and use minimal other fields.
 
 Snippets:
 {snippets}
-
-Reply with only valid JSON, no markdown."""
+"""
     try:
         raw = generate_text(prompt)
         raw = raw.replace("```json", "").replace("```", "").strip()
@@ -158,41 +421,71 @@ Reply with only valid JSON, no markdown."""
         urls = d.get("example_urls") or []
         if not urls and example_links:
             urls = example_links[:5]
+        out_title = (d.get("title") or title or "Pain signal")[:200]
+        if "insufficient evidence" in out_title.lower():
+            return {
+                "title": out_title,
+                "moment_of_pain": "",
+                "summary": "",
+                "persona": "",
+                "stakes": [],
+                "what_people_do_now": "",
+                "example_urls": urls[:5],
+                "why_matters": "",
+            }
         return {
-            "title": (d.get("title") or title or "Pain signal")[:200],
+            "title": out_title,
+            "moment_of_pain": (d.get("moment_of_pain") or "")[:500],
             "summary": (d.get("summary") or summary or "")[:1500],
             "persona": (d.get("persona") or persona or "")[:300],
-            "why_matters": (d.get("why_matters") or why_matters or "")[:500],
+            "stakes": [str(s) for s in (d.get("stakes") or [])][:5],
+            "what_people_do_now": (d.get("what_people_do_now") or "")[:300],
             "example_urls": urls[:5],
+            "why_matters": " ".join(d.get("stakes") or [])[:500] or (why_matters or ""),
         }
     except Exception as e:
         logger.warning("summarize_cluster failed: %s", e)
         return {
             "title": title or "Pain signal",
+            "moment_of_pain": "",
             "summary": summary or "",
             "persona": persona or "",
-            "why_matters": why_matters or "",
+            "stakes": [],
+            "what_people_do_now": "",
             "example_urls": example_links[:5],
+            "why_matters": why_matters or "",
         }
 
 
 def catalyst_bullets(news_items: list[dict[str, Any]], max_bullets: int = 7) -> list[dict[str, Any]]:
     """
-    From news items (RSS), produce 3–7 catalyst bullets.
-    Each: title, summary (1–2 sentences), interests, problems_created, source_urls.
+    Strict catalyst gating: only items that fit B2B/devtools and have narrow buyer + specific problem.
+    Schema: title, what_changed, who_feels_it, problems_created (array), opportunity_wedge, confidence, source_urls, connects_to (optional).
+    Exclude local human-interest (e.g. food giveaways) unless directly impacts B2B software/compliance/ops.
+    Allow 0 catalysts if none pass.
     """
     if not news_items:
         return []
+    excluded = ", ".join(EXCLUDED_TOPICS[:6])
     text = "\n\n".join(
         [
             f"Title: {x.get('title','')}\nURL: {x.get('url','')}\nSnippet: {(x.get('text') or x.get('title') or '')[:500]}"
             for x in news_items[:30]
         ]
     )
-    prompt = f"""From these news items, identify 3–7 "catalyst" bullets: industry-wide events that create urgency or new problems.
-For each bullet output a JSON object with: title, summary (1–2 sentences), interests (list of topic names like "AI/ML", "SaaS"), problems_created (what new problems or urgency this creates), source_urls (list of 1–2 URLs from the items).
+    prompt = f"""You may make bounded inferences that logically follow from the evidence, as long as they are marked with tentative language ('suggests', 'likely means', 'points to', 'one plausible read') and grounded in the provided snippets. Do NOT invent new facts. If exact product is unclear, propose the narrowest plausible starting wedge using tentative language. Only use 'Unclear from evidence' if even a buyer cannot be inferred.
 
-Reply with a JSON array of such objects. Only valid JSON.
+Audience: {NEWSLETTER_AUDIENCE}. Excluded (do NOT include unless directly impacts tech compliance/ops): {excluded}.
+
+From these news items, output catalysts that create urgency or new problems for B2B builders. Output valid JSON array only, no markdown.
+Each object must have: title, topic_tags (array of 2–5 short tags for distinctness), what_changed (1 factual sentence), who_feels_it (narrow persona), problems_created (array of 2+ concrete headaches), opportunity_wedge ("Start with <buyer> who <situation>, build <first feature>." — use tentative language if needed; only "Unclear from evidence." if even a buyer cannot be inferred), confidence (0.0–1.0), source_urls (array of URLs from items), connects_to (optional: 1 sentence linking this catalyst to a theme if relevant). Avoid overlapping topic_tags with other catalysts unless connects_to adds a new sub-angle.
+
+Hard rules:
+- Do NOT include local human-interest (e.g. food giveaways, sports, celebrity) unless it directly impacts B2B software/compliance/operations.
+- If you cannot name a narrow buyer and specific problem, do NOT include the item.
+- OK to return 0 catalysts (empty array) if none pass.
+- Wedge: If exact product is unclear, propose the narrowest plausible starting wedge with tentative language. Only output "Unclear from evidence" if even a buyer cannot be inferred.
+
 News items:
 {text[:15000]}
 """
@@ -200,16 +493,130 @@ News items:
         raw = generate_text(prompt)
         raw = raw.replace("```json", "").replace("```", "").strip()
         arr = json.loads(raw) if raw.startswith("[") else []
-        return [
-            {
+        if not isinstance(arr, list):
+            arr = []
+        out = []
+        for x in arr[:max_bullets]:
+            wedge = str(x.get("opportunity_wedge") or "Unclear from evidence.").strip()
+            if not wedge.endswith("."):
+                wedge = wedge + "."
+            problems = x.get("problems_created")
+            if isinstance(problems, list):
+                problems_list = [str(p) for p in problems][:5]
+            else:
+                problems_list = [str(problems)] if problems else []
+            out.append({
                 "title": str(x.get("title", ""))[:200],
-                "summary": str(x.get("summary", ""))[:800],
-                "interests": [str(i) for i in (x.get("interests") or [])][:5],
-                "problems_created": str(x.get("problems_created") or "")[:500],
+                "topic_tags": [str(t) for t in (x.get("topic_tags") or [])][:5],
+                "what_changed": str(x.get("what_changed") or "")[:500],
+                "who_feels_it": str(x.get("who_feels_it") or "")[:200],
+                "problems_created": problems_list,
+                "opportunity_wedge": wedge[:300],
+                "confidence": max(0.0, min(1.0, float(x.get("confidence", 0.5)))),
                 "source_urls": [str(u) for u in (x.get("source_urls") or [])][:3],
-            }
-            for x in (arr if isinstance(arr, list) else [])[:max_bullets]
-        ]
+                "summary": str(x.get("what_changed") or x.get("summary") or "")[:800],
+                "interests": [],
+                "connects_to": str(x.get("connects_to") or "").strip()[:300] or None,
+            })
+        return out
     except Exception as e:
         logger.warning("catalyst_bullets failed: %s", e)
+        return []
+
+
+def compose_idea_cards(
+    pain_clusters: list[dict[str, Any]],
+    catalysts: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    One Gemini call: merge selected pain clusters + catalysts into 3–5 idea cards (themes).
+    Output: array of cards with idea_title, hook, what_happened, pain_signal {claim, evidence_snippets, links},
+    catalyst_signal {claim, evidence_snippets, links}, why_now [], wedge (exact format or "Unclear from evidence."),
+    confidence, inference (1 sentence combining pain + catalyst).
+    Hard: every claim supported by evidence snippets; no duplicate URLs across cards.
+    """
+    if not pain_clusters and not catalysts:
+        return []
+    pain_text = "\n\n".join(
+        [
+            f"[Pain] title={c.get('title','')} summary={c.get('summary','')[:300]} snippets={c.get('evidence_snippets', [])[:5]} links={c.get('example_urls', c.get('links', []))[:3]}"
+            for c in pain_clusters[:15]
+        ]
+    )
+    cat_text = "\n\n".join(
+        [
+            f"[Catalyst] title={c.get('title','')} what_changed={c.get('what_changed','')[:200]} source_urls={c.get('source_urls', [])[:3]}"
+            for c in catalysts[:15]
+        ]
+    )
+    prompt = f"""You may make bounded inferences that logically follow from the evidence, as long as they are marked with tentative language ('suggests', 'likely means', 'points to', 'one plausible read') and grounded in the provided snippets. Do NOT invent new facts. Only use 'Unclear from evidence' if no reasonable inference about buyer or problem shape can be made.
+
+Bad: "Unclear from evidence."
+Good: "Snippets show X, which suggests Y is becoming a recurring bottleneck."
+
+Merge the following pain clusters and catalysts into 3–5 idea cards (themes). Output valid JSON array only, no markdown.
+Each card must have:
+- idea_title: short theme title
+- hook: 1 sentence hook (8–14 words)
+- what_happened: 1–2 sentences
+- pain_signal: {{ "claim": "...", "evidence_snippets": ["...", "..."], "links": ["url", ...] }}
+- catalyst_signal: {{ "claim": "...", "evidence_snippets": ["...", "..."], "links": ["url", ...] }} (can be empty claim if no catalyst)
+- why_now: array of 1–3 short strings
+- wedge: exactly "Start with <buyer> who <situation>, build <first feature>." or "Unclear from evidence." (use tentative language for plausible wedge; only Unclear if buyer cannot be inferred)
+- confidence: 0.0–1.0
+- inference: 1 sentence combining pain + catalyst into what this suggests (use tentative language)
+
+Hard constraints: Every claim must be supported by the evidence_snippets you list. No duplicate URLs across cards (each URL at most once in the whole output). Use only URLs from the input.
+
+Pain clusters:
+{pain_text[:8000]}
+
+Catalysts:
+{cat_text[:6000]}
+"""
+    try:
+        raw = generate_text(prompt)
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        arr = json.loads(raw) if raw.startswith("[") else []
+        if not isinstance(arr, list):
+            arr = []
+        seen_urls: set[str] = set()
+        out = []
+        for card in arr[:5]:
+            if not isinstance(card, dict):
+                continue
+            ps = card.get("pain_signal") or {}
+            cs = card.get("catalyst_signal") or {}
+            links = list(ps.get("links") or []) + list(cs.get("links") or [])
+            dup = [u for u in links if u and u in seen_urls]
+            if dup:
+                continue  # skip card with duplicate URL
+            for u in links:
+                if u:
+                    seen_urls.add(u)
+            wedge = str(card.get("wedge") or "Unclear from evidence.").strip()
+            if not wedge.endswith("."):
+                wedge = wedge + "."
+            out.append({
+                "idea_title": str(card.get("idea_title") or "")[:200],
+                "hook": str(card.get("hook") or "")[:500],
+                "what_happened": str(card.get("what_happened") or "")[:800],
+                "pain_signal": {
+                    "claim": str(ps.get("claim") or "")[:500],
+                    "evidence_snippets": [str(s) for s in (ps.get("evidence_snippets") or [])][:5],
+                    "links": [str(u) for u in (ps.get("links") or [])][:3],
+                },
+                "catalyst_signal": {
+                    "claim": str(cs.get("claim") or "")[:500],
+                    "evidence_snippets": [str(s) for s in (cs.get("evidence_snippets") or [])][:5],
+                    "links": [str(u) for u in (cs.get("links") or [])][:3],
+                },
+                "why_now": [str(w) for w in (card.get("why_now") or [])][:3],
+                "wedge": wedge[:300],
+                "confidence": max(0.0, min(1.0, float(card.get("confidence", 0.5)))),
+                "inference": str(card.get("inference") or "")[:400],
+            })
+        return out
+    except Exception as e:
+        logger.warning("compose_idea_cards failed: %s", e)
         return []

@@ -79,7 +79,7 @@ def fetch_hn_stories(
                 logger.warning("HN %s failed: %s", endpoint, e)
         # Comments attached per-story in metadata["comments"] above
         if False:
-            pass
+            # Optionally add top-level comments as separate “items” for pain signals (stored as hn_comment)
     return out
 
 

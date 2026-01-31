@@ -44,6 +44,34 @@ APIFY_REDDIT_ACTOR = _str("APIFY_REDDIT_ACTOR") or "trudax/reddit-scraper"
 
 # Ingest limits (tunable via env)
 HN_TOP_LIMIT = _int("HN_TOP_LIMIT", 100)
-HN_COMMENTS_LIMIT = _int("HN_COMMENTS_LIMIT", 0)  # 0 = no comments
+HN_COMMENTS_LIMIT = _int("HN_COMMENTS_LIMIT", 5)  # top N comments per story (0 = no comments)
 REDDIT_POSTS_PER_SUB = _int("REDDIT_POSTS_PER_SUB", 25)
 RSS_ENTRIES_PER_FEED = _int("RSS_ENTRIES_PER_FEED", 20)
+
+# Newsletter scope (hard gate: ranking/selection reference this)
+NEWSLETTER_AUDIENCE = "B2B builders/devtools founders"
+INCLUDED_TOPICS = [
+    "devtools",
+    "infra",
+    "security",
+    "data",
+    "AI ops",
+    "cloud",
+    "compliance",
+    "SaaS ops",
+    "observability",
+    "developer productivity",
+    "payments infra",
+    "platform engineering",
+]
+EXCLUDED_TOPICS = [
+    "local human interest",
+    "agriculture/food giveaways",
+    "sports",
+    "celebrity",
+    "lifestyle",
+    "pure politics",
+]  # unless directly impacts tech compliance/operations
+
+# Pre-cluster: top N candidates by unmet_score (configurable)
+EDITOR_GATE_TOP_N = _int("EDITOR_GATE_TOP_N", 50)
