@@ -298,36 +298,74 @@ def run_report(target_date: str | None = None) -> str:
     # 6) Compose Startup-Grade Idea Cards (one Gemini call)
     raw_cards = compose_startup_grade_cards(selected_pain_clusters, selected_catalysts)
 
-    # 6b) Validate each card; drop if invalid (buildability gate)
+    # Build allowed URLs from clusters (anti-hallucination: never invent links)
+    allowed_urls: set[str] = set()
+    cluster_links_list: list[str] = []
+    for c in selected_pain_clusters:
+        for u in (c.get("example_urls") or c.get("links") or [])[:10]:
+            if u and isinstance(u, str):
+                allowed_urls.add(u.strip())
+                cluster_links_list.append(u.strip())
+        for b in (c.get("evidence_bullets") or [])[:20]:
+            if isinstance(b, dict):
+                for key in ("post_url", "comment_url"):
+                    u = b.get(key)
+                    if u and isinstance(u, str) and u.strip():
+                        allowed_urls.add(u.strip())
+                        cluster_links_list.append(u.strip())
+    cluster_links = list(dict.fromkeys(cluster_links_list))[:10]
+
+    # 6b) Validate split (HARD_FAIL = drop, SOFT_FAIL = repair then re-validate)
     idea_cards: list[dict[str, Any]] = []
     validation_rejects: list[dict[str, Any]] = []
     for i, card in enumerate(raw_cards):
-        errs = validate_startup_grade_card(card)
-        if not errs:
+        hard, soft, warnings = validate_startup_grade_card_split(card, allowed_urls=allowed_urls)
+        if hard:
+            validation_rejects.append({"title": card.get("title") or "", "errors": hard + soft})
+            logger.info("buildability_hard_fail card idx=%s title=%s hard=%s", i, (card.get("title") or "")[:50], hard)
+            continue
+        if soft or warnings:
+            repaired = repair_startup_grade_card(card, cluster_links=cluster_links)
+            hard2, soft2, warnings2 = validate_startup_grade_card_split(repaired, allowed_urls=allowed_urls)
+            if hard2:
+                validation_rejects.append({"title": repaired.get("title") or "", "errors": hard2 + soft2})
+                logger.info("buildability_hard_fail_after_repair card idx=%s title=%s", i, (repaired.get("title") or "")[:50])
+                continue
+            repaired["_warnings"] = list(warnings) + list(warnings2) + list(soft2)
+            idea_cards.append(repaired)
+            logger.info("buildability_pass_after_repair card idx=%s title=%s warnings=%s", i, (repaired.get("title") or "")[:50], repaired.get("_warnings"))
+        else:
             idea_cards.append(card)
             logger.info("buildability_pass card idx=%s title=%s", i, (card.get("title") or "")[:50])
-        else:
-            validation_rejects.append({"title": card.get("title") or "", "errors": errs})
-            logger.info("buildability_fail card idx=%s title=%s errors=%s", i, (card.get("title") or "")[:50], errs)
 
-    # 7) Report: Header, Today's themes, 3–5 Startup-Grade Idea Cards, One bet, Rejects (for transparency)
+    # 7) Report: Header, themes, cards (or Draft section if <2 cards), One bet, Rejects
     lines = [f"# Unmet — {d}", "", get_intro(), "", ""]
     themes_line = get_todays_themes_from_startup_cards(idea_cards, top_n=3)
     if themes_line:
         lines.append(themes_line)
         lines.append("")
 
-    lines.append("## Startup-Grade Idea Cards")
-    lines.append("")
-    for i, card in enumerate(idea_cards):
-        lines.append(format_startup_grade_card(card))
-        logger.info(
-            "published_card idx=%s title=%s who_pays=%s mvp=%s",
-            i,
-            (card.get("title") or "")[:50],
-            (card.get("who_pays") or "")[:40],
-            ((card.get("wedge") or {}).get("mvp") or "")[:40],
-        )
+    use_draft_section = len(idea_cards) < 2
+    if use_draft_section:
+        lines.append("## Draft / Needs more receipts")
+        lines.append("")
+        for i, card in enumerate(idea_cards):
+            w = card.get("_warnings") or []
+            lines.append(format_startup_grade_card(card, warnings=w, is_draft=True))
+            logger.info("draft_card idx=%s title=%s", i, (card.get("title") or "")[:50])
+    else:
+        lines.append("## Startup-Grade Idea Cards")
+        lines.append("")
+        for i, card in enumerate(idea_cards):
+            w = card.get("_warnings") or []
+            lines.append(format_startup_grade_card(card, warnings=w, is_draft=False))
+            logger.info(
+                "published_card idx=%s title=%s who_pays=%s mvp=%s",
+                i,
+                (card.get("title") or "")[:50],
+                (card.get("who_pays") or "")[:40],
+                ((card.get("wedge") or {}).get("mvp") or "")[:40],
+            )
 
     lines.append("---")
     lines.append("")

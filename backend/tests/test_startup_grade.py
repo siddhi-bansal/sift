@@ -1,6 +1,7 @@
 """Tests for startup-grade card schema and validation."""
 from unmet.newsletter_style import (
     validate_startup_grade_card,
+    validate_startup_grade_card_split,
     STARTUP_GRADE_BANNED_PHRASES,
 )
 
@@ -112,3 +113,17 @@ def test_evidence_comment_permalink_ratio_at_least_70_percent():
         {"quote": "c", "post_url": "https://news.ycombinator.com/item?id=1", "comment_url": None},
     ]
     assert _evidence_comment_permalink_ratio(evidence_weak) < EVIDENCE_COMMENT_PERMALINK_MIN_RATIO
+
+
+def test_validate_accepts_proxy_stakes():
+    """Card with proxy/estimate stakes (no monetary) should pass stakes rule (time/reliability/security/money)."""
+    card = _valid_card()
+    card["stakes"] = [
+        "Estimate: 2–4 engineer-hours per incident (MTTR impact).",
+        "Proxy: likely sev escalation if unaddressed.",
+    ]
+    hard, soft, _ = validate_startup_grade_card_split(card)
+    assert not any("stakes" in e for e in hard), hard
+    assert not any("stakes" in e for e in soft), soft
+    errs = validate_startup_grade_card(card)
+    assert not any("stakes" in e for e in errs), errs

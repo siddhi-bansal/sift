@@ -475,7 +475,9 @@ def validate_startup_grade_card_split(
             soft.append("problem should include who is blocked (who/teams/role)")
 
     # ---- Evidence: missing or no post_url -> HARD; invented links -> HARD; wrong shape / no comment_url -> SOFT/warning
-    if evidence is None or not isinstance(evidence, list) or len(evidence) < 1:
+    if evidence is None or not isinstance(evidence, list):
+        hard.append("evidence missing entirely")
+    elif len(evidence) < 1:
         hard.append("evidence missing entirely")
     else:
         has_post_url = False
@@ -674,6 +676,7 @@ def format_startup_grade_card(
         lines.append(f"**Why existing tools fail:** {why_fail}")
     stakes = card.get("stakes") or []
     if stakes:
+        lines.append("**Stakes:**")
         for s in stakes[:3]:
             if s:
                 lines.append(f"- {s}")
