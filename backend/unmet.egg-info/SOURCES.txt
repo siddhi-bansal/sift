@@ -4,6 +4,8 @@ tests/test_classify.py
 tests/test_dedupe.py
 tests/test_golden.py
 tests/test_scoring.py
+tests/test_startup_grade.py
+tests/test_topic_coherence.py
 tests/test_wedge.py
 unmet/__init__.py
 unmet/__main__.py
@@ -25,6 +27,7 @@ unmet/analyze/evidence_snippets.py
 unmet/analyze/pain_score.py
 unmet/analyze/runner.py
 unmet/analyze/scoring.py
+unmet/analyze/topic_coherence.py
 unmet/fixtures/__init__.py
 unmet/ingest/__init__.py
 unmet/ingest/hn.py

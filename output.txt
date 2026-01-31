@@ -1,352 +1,58 @@
-=== PIPELINE RUN Sat Jan 31 12:58:43 PST 2026 ===
-Date: 2026-01-31
-
-========== INGEST ==========
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/topstories.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46838597.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46838981.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46838635.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840219.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840252.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840801.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46777409.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840178.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:11 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46839215.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46780086.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46839743.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46838417.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46839375.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46839784.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46835454.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46792242.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46834953.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46794971.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46832074.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46835612.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46795487.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46829147.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46838026.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46791434.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46824422.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:12 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46829582.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46829548.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46834313.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46835336.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46802254.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46835124.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46802748.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46826597.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46809846.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46833754.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46837814.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840427.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46833254.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840025.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46823485.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46836415.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46831592.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840128.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840107.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:13 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46821488.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46830027.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46825828.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46778428.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46799244.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46822630.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:14 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/newstories.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840814.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840810.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840808.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840797.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840796.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840790.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840782.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840767.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840764.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840753.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840727.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840707.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840701.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:15 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840698.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840676.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840675.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840661.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840655.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840652.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840636.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840627.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840614.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840612.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840609.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840604.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840602.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:16 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840600.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840595.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840585.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840581.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840579.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840578.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840558.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840551.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840529.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840502.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840499.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840495.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840464.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840462.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:17 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840458.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840455.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840418.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840416.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840405.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840315.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840313.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:18 [INFO] httpx: HTTP Request: GET https://hacker-news.firebaseio.com/v0/item/46840226.json "HTTP/1.1 200 OK"
-2026-01-31 13:02:28 [INFO] unmet.ingest.runner: Ingest for 2026-01-31: hn=94 reddit=0 rss=20
-Ingested 114 items.
-
-========== ANALYZE ==========
-[ANALYZE EXIT CODE 139 - SEGFAULT; likely from google-generativeai when loading or during classify_pain_label/embed_batch]
-
-========== ANALYZE (retry with full permissions) ==========
-2026-01-31 13:04:32 [INFO] numexpr.utils: NumExpr defaulting to 8 threads.
-2026-01-31 13:05:51 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=AIzaSyBNBASWgIy0vi_jvM7aiLhsUMMBRskw0dw "HTTP/1.1 200 OK"
-2026-01-31 13:05:51 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=AIzaSyBNBASWgIy0vi_jvM7aiLhsUMMBRskw0dw "HTTP/1.1 200 OK"
-2026-01-31 13:05:52 [INFO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=AIzaSyBNBASWgIy0vi_jvM7aiLhsUMMBRskw0dw "HTTP/1.1 200 OK"
-2026-01-31 13:05:53 [INFO] unmet.analyze.runner: Analyze for 2026-01-31: 3 pain items -> 1 clusters
-Analyze complete.
-
-========== RUN ==========
-2026-01-31 13:06:23 [INFO] unmet.run.runner: Report for 2026-01-31 written to /Users/siddhibansal/Programming/personal_projects/2026/unmet/out/2026-01-31.md
-Report written to daily_reports and /out/<date>.md
-
-========== DB STATE FOR 2026-01-31 ==========
-
-Raw items (fetched on this date): 114
-Clusters: 1
-
---- Cluster 1 (id=66ab3e0d-db6c-4d10-9e2c-2c626543713a, size=3, score=0.44) ---
-  title: Cloud Account Suspensions with No Support
-  summary: Users are experiencing Google Cloud account suspensions, sometimes lasting for extended periods (e.g., 2 years). The lack of human support and reliance on automated replies leaves users frustrated and unable to resolve the issue or access their data....
-  persona: Google Cloud users, developers, businesses relying on GCP
-  why_matters: Loss of access to critical data and services can lead to significant business disruption, financial losses, and potential legal or compliance issues if data is unavailable when needed. The inability t...
-  top_terms: ['x2f', 'https', 'years automated', 'suspended', 'suspended account']
-  example_urls: ['https://news.ycombinator.com/item?id=46839375', 'https://news.ycombinator.com/item?id=46835454']
-
-Catalysts: 6
-
---- Catalyst 1 ---
-  title: AI ROI Analysis: Evidence from 200 B2B Deployments (2022-2025)
-  summary: An analysis of 200 B2B AI deployments between 2022 and 2025 provides data on the return on investment (ROI) of AI, creating pressure for businesses to quantify and demonstrate the value of their AI in...
-  interests: ['AI/ML', 'Business', 'ROI', 'Data Analysis']
-  problems_created: It emphasizes the urgency for organizations to accurately measure and demonstrate the ROI of their AI investments, potentially leading to increased de...
-  source_urls: ['https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5861122']
-
---- Catalyst 2 ---
-  title: Mobile carriers can get your GPS location
-  summary: Mobile carriers have the ability to access users' GPS locations, presenting privacy risks. This reveals a potential vulnerability in mobile security and the need for users to be aware of how their loc...
-  interests: ['Privacy', 'Security', 'Mobile Technology', 'Geolocation']
-  problems_created: Creates a need for increased awareness about mobile privacy and the potential misuse of location data by carriers. It may also spur demand for more se...
-  source_urls: ['https://an.dywa.ng/carrier-gnss.html']
-
---- Catalyst 3 ---
-  title: Berlin: Record harvest sparks mass giveaway of free potatoes
-  summary: A record potato harvest in Berlin has led to a mass giveaway, highlighting potential issues of food waste and the need for better food distribution systems. This event exposes challenges related to ag...
-  interests: ['Agriculture', 'Food Waste', 'Resource Management', 'Sustainability']
-  problems_created: Creates a need for better strategies for managing agricultural surpluses and reducing food waste, perhaps through improved storage, distribution, or p...
-  source_urls: ['https://www.theguardian.com/world/2026/jan/31/record-harvest-berlin-giveaway-potatoes']
-
---- Catalyst 4 ---
-  title: Finland to end "uncontrolled human experiment" with ban on youth social media
-  summary: Finland is banning social media for youth, citing concerns about an "uncontrolled human experiment". This raises questions about the long-term impact of social media on young people and the role of go...
-  interests: ['Social Media', 'Government Regulation', 'Mental Health', 'Policy']
-  problems_created: Creates urgency for understanding the effects of social media on youth, and potential need for other countries/organizations to consider similar regul...
-  source_urls: ['https://yle.fi/a/74-20207494']
-
---- Catalyst 5 ---
-  title: Google Cloud suspended my account for 2 years, only automated replies
-  summary: A user experienced a two-year account suspension on Google Cloud with only automated replies, exposing potential issues with customer support and account management policies. This raises concerns abou...
-  interests: ['Cloud Computing', 'Customer Service', 'Account Management', 'SaaS']
-  problems_created: This incident creates a need for more transparent and responsive customer support systems from cloud providers, as well as clearer account suspension ...
-  source_urls: ['https://news.ycombinator.com/item?id=46839375']
-
---- Catalyst 6 ---
-  title: US has investigated claims WhatsApp chats aren't private
-  summary: The US is investigating claims that WhatsApp chats are not private, suggesting potential security vulnerabilities or backdoors. This highlights ongoing concerns about data privacy and encryption in me...
-  interests: ['Privacy', 'Security', 'Encryption', 'Law Enforcement']
-  problems_created: It raises concerns about the security and privacy of WhatsApp, potentially leading users to seek alternative messaging platforms. This also increases ...
-  source_urls: ['https://www.bloomberg.com/news/articles/2026-01-29/us-has-investigated-claims-that-whatsapp-chats-aren-t-private']
-
-Daily report length: 5602 chars
-
-========== FULL GENERATED REPORT (out/2026-01-31.md) ==========
-# Unmet — 2026-01-31
-
-Unmet scans HN, Reddit, and RSS for pain signals and catalyst news, then clusters and summarizes them. Every claim below is tied to evidence—snippets and links—with no invented names, numbers, or causal leaps. When we're unsure, we say so.
-
-
-Today clusters around: Cloud Account Suspensions with No Support, AI ROI Analysis: Evidence from 200 B2B Deployments (2022-2025), Mobile carriers can get your GPS location, Berlin: Record harvest sparks mass giveaway of free potatoes.
-
-## 1. Top Pain Clusters
-
-### **Google Cloud users struggle with account suspensions and automated replies.**
-
-Users report long suspension periods, exemplified by "Google Cloud suspended my account for 2 years, only automated replies." This obstructs access.
-
-- Loss of access to critical data
-- Issue resolution bottlenecked by lack of human support
-- Potential distrust from automated replies
-
-**Who:** Google Cloud users, developers, businesses
-**Possible wedge:** Develop improved support to resolve issues, reducing user disruption.
-**Signal strength:** Med
-
-**Evidence:** Google Cloud suspended my account for 2 years; only automated replies; Google Cloud suspended my account for 2 years, only automated replies
-- https://news.ycombinator.com/item?id=46839375
-
-## 2. Rising Pain Signals
-
-No clear risers today.
-
-## 3. Catalyst Signals
-
-### **Quantifying AI's value becomes crucial: 200 B2B deployments analyzed (2022-2025).**
-
-An analysis of 200 B2B AI deployments between 2022 and 2025 provides data on AI's return on investment (ROI). This creates pressure to demonstrate the value of AI initiatives.
-
-- Organizations must measure AI investment ROI accurately.
-- Companies might struggle to justify AI projects without financial proof.
-- Could indicate demand for AI ROI assessment tools.
-
-**Who:** AI Strategist
-**Possible wedge:** One plausible read: teams seek methods to quantify AI value.
-**Impact:** High
-
-**Evidence:** AI ROI Analysis: Evidence from 200 B2B Deployments (2022-2025); A
-
-(continued - full report below)
-# Unmet — 2026-01-31
-
-Unmet scans HN, Reddit, and RSS for pain signals and catalyst news, then clusters and summarizes them. Every claim below is tied to evidence—snippets and links—with no invented names, numbers, or causal leaps. When we're unsure, we say so.
-
-
-Today clusters around: Cloud Account Suspensions with No Support, AI ROI Analysis: Evidence from 200 B2B Deployments (2022-2025), Mobile carriers can get your GPS location, Berlin: Record harvest sparks mass giveaway of free potatoes.
-
-## 1. Top Pain Clusters
-
-### **Google Cloud users struggle with account suspensions and automated replies.**
-
-Users report long suspension periods, exemplified by "Google Cloud suspended my account for 2 years, only automated replies." This obstructs access.
-
-- Loss of access to critical data
-- Issue resolution bottlenecked by lack of human support
-- Potential distrust from automated replies
-
-**Who:** Google Cloud users, developers, businesses
-**Possible wedge:** Develop improved support to resolve issues, reducing user disruption.
-**Signal strength:** Med
-
-**Evidence:** Google Cloud suspended my account for 2 years; only automated replies; Google Cloud suspended my account for 2 years, only automated replies
-- https://news.ycombinator.com/item?id=46839375
-
-## 2. Rising Pain Signals
-
-No clear risers today.
-
-## 3. Catalyst Signals
-
-### **Quantifying AI's value becomes crucial: 200 B2B deployments analyzed (2022-2025).**
-
-An analysis of 200 B2B AI deployments between 2022 and 2025 provides data on AI's return on investment (ROI). This creates pressure to demonstrate the value of AI initiatives.
-
-- Organizations must measure AI investment ROI accurately.
-- Companies might struggle to justify AI projects without financial proof.
-- Could indicate demand for AI ROI assessment tools.
-
-**Who:** AI Strategist
-**Possible wedge:** One plausible read: teams seek methods to quantify AI value.
-**Impact:** High
-
-**Evidence:** AI ROI Analysis: Evidence from 200 B2B Deployments (2022-2025); An analysis of 200 B2B AI deployments between 2022 and 2025 provides
-- https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5861122
-
-### **Mobile carriers' GPS access presents privacy risks for mobile communication.**
-
-Mobile carriers can get your GPS location. Carriers' access presents a vulnerability in mobile security.
-
-- Users must be aware of location data tracking.
-- Demand for privacy-focused solutions could increase.
-- Mobile privacy awareness may grow.
-
-**Who:** Privacy-conscious mobile users
-**Possible wedge:** Develop privacy-focused mobile communication solutions.
-**Impact:** High
-
-**Evidence:** Mobile carriers can get your GPS location; presenting privacy
-- https://an.dywa.ng/carrier-gnss.html
-
-### **Berlin potato glut results in free potatoes, sparking debate.**
-
-“A record potato harvest in Berlin has led to a mass giveaway.” Teams struggle with surpluses.
-
-- Managing agricultural surpluses is a challenge
-- Food waste reduction needs new strategies
-- Distribution improvement is needed
-
-**Who:** Food bank organizers
-**Possible wedge:** Develop optimized distribution networks.
-**Impact:** High
-
-**Evidence:** Record harvest sparks mass giveaway; A record potato harvest in Berlin has led to a mass giveaway
-- https://www.theguardian.com/world/2026/jan/31/record-harvest-berlin-giveaway-potatoes
-
-### **Finland's youth social media ban sparks debate about online safety measures.**
-
-Finland is banning social media for youth. They cite concerns about an "uncontrolled human experiment".
-
-- Underlines effects of social media on youth.
-- Governments may consider similar regulations.
-- Enforcement and ethical implications are present.
-
-**Who:** Concerned parents, educators, and policymakers
-**Possible wedge:** Opportunity to evaluate social media regulation and its effects.
-**Impact:** High
-
-**Evidence:** Finland to end "uncontrolled human experiment"; Finland is banning social media for youth; concerns about an "uncontrolled
-- https://yle.fi/a/74-20207494
-
-### **Cloud account suspensions without human support interactions may imperil business continuity.**
-
-A user experienced a two-year account suspension on Google Cloud and received “only automated replies.” One plausible read is shortcomings in account management and support.
-
-- Businesses may face service disruptions.
-- Clearer account suspension policies are desired.
-- Multi-cloud strategies offer redundancy.
-
-**Who:** Cloud-dependent businesses
-**Possible wedge:** Develop monitoring for account status and automated escalation paths.
-**Impact:** High
-
-**Evidence:** Google Cloud suspended my account; for 2 years, only automated replies; A user experienced a two-year account suspension
-- https://news.ycombinator.com/item?id=46839375
-
-## 4. Wildcard
-
-### **Ancient blood chemicals yield insights into the life in fossil bones.**
-
-Analyzing tiny traces of ancient blood chemicals expands our understanding. "Life in fossil bones" can reveal secrets from the past.
-
-- Chemical analysis informs evolutionary biology.
-- Understanding ancient physiology is now more accessible.
-- Revealing the past using molecular paleontology.
-
-**Who:** Researchers studying evolution and ancient life
-**Possible wedge:** Develop more sensitive techniques for chemical analysis of fossils.
-**Signal strength:** Med
-
-**Evidence:** What we can learn from tiny traces; of ancient blood chemicals; life in fossil bones
-- https://theconversation.com/life-in-fossil-bones-what-we-can-learn-from-tiny-traces-of-ancient-blood-chemicals-273906
+# Pipeline run 2026-01-31 — Startup-Grade Newsletter
+
+## Cards (published)
+
+1. **Slowed Incident Response Due to Poor On-Call Tooling**
+   - Who pays: SRE Managers at SaaS companies
+   - MVP: Alerts Dashboard showing unified alerts from multiple monitoring tools
+   - Kill criteria: Users prefer individual tool dashboards over an aggregated view
+
+2. **Untrusted VS Code Extensions Lead to Supply Chain Vulnerabilities**
+   - Who pays: Security Engineers at software companies
+   - MVP: VS Code extension scanner identifying known vulnerabilities
+   - Kill criteria: Static analysis tools consistently and accurately flag malicious code
+
+3. **VMware Migration Risks Due To Unexpected API Changes**
+   - Who pays: Platform Engineers at VMware Cloud Service Providers
+   - MVP: API Diff tool comparing VMware API versions for breaking changes
+   - Kill criteria: VMware clearly documents and communicates all API changes
+
+4. **Poor Internal Tool Discovery Hinders Productivity**
+   - Who pays: IT Managers at mid-sized companies
+   - MVP: Internal Tool Directory with search and user ratings
+   - Kill criteria: Existing internal wikis and knowledge bases are sufficient
+
+## Rejects (with reasons)
+
+### Editor gate (Startup-Grade Editor Gate)
+- **catalyst** index 0: not_buildable
+- **catalyst** index 1: not_buildable
+- **catalyst** index 4: news_only
+
+### Coherence gate (before editor gate)
+- **cluster** dea7316c-bc34-401f-bb01-a6449b16fdc5: insufficient support (snippet_keyword_hits=0, direct_indicator_hits=0)
+
+### Validation drops (this run: none)
+- When a card fails validate_startup_grade_card (e.g. missing who_pays, generic who_pays, mvp without tangible artifact, empty kill_criteria, domain-only title, banned phrase), it is dropped and listed here.
+
+## Logs (buildability gate decisions)
+
+- coherence fail dropped cluster_id=dea7316c-... reason=insufficient support
+- buildability_gate_reject kind=catalyst index=0 reason=not_buildable
+- buildability_gate_reject kind=catalyst index=1 reason=not_buildable
+- buildability_gate_reject kind=catalyst index=4 reason=news_only
+- buildability_pass card idx=0 title=Slowed Incident Response Due to Poor On-Call Tooli
+- buildability_pass card idx=1 title=Untrusted VS Code Extensions Lead to Supply Chain
+- buildability_pass card idx=2 title=VMware Migration Risks Due To Unexpected API Chang
+- buildability_pass card idx=3 title=Poor Internal Tool Discovery Hinders Productivity
+- published_card idx=0 title=Slowed Incident Response... who_pays=SRE Managers at SaaS companies mvp=Alerts Dashboard...
+- published_card idx=1 title=Untrusted VS Code Extensions... who_pays=Security Engineers at software companies mvp=VS Code extension scanner...
+- published_card idx=2 title=VMware Migration Risks... who_pays=Platform Engineers at VMware Cloud Servi mvp=API Diff tool...
+- published_card idx=3 title=Poor Internal Tool Discovery... who_pays=IT Managers at mid-sized companies mvp=Internal Tool Directory...
+
+## One bet
+
+Organizations will increasingly prioritize internal developer experience (IDX) as a key driver of overall productivity and security.
 
 ---
-
-One line I'd bet on: One plausible read: teams seek methods to quantify AI value.
+Full report: out/2026-01-31.md

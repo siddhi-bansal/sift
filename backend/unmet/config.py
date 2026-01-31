@@ -43,8 +43,13 @@ APIFY_API_TOKEN = _str("APIFY_API_TOKEN")
 APIFY_REDDIT_ACTOR = _str("APIFY_REDDIT_ACTOR") or "trudax/reddit-scraper"
 
 # Ingest limits (tunable via env)
-HN_TOP_LIMIT = _int("HN_TOP_LIMIT", 100)
-HN_COMMENTS_LIMIT = _int("HN_COMMENTS_LIMIT", 5)  # top N comments per story (0 = no comments)
+# HN: fewer posts, more comments per post (comment-heavy, problem-centric idea cards with forensic evidence).
+# Set HN_POST_LIMIT (default 25) and HN_COMMENTS_PER_POST (default 30) to control volume.
+HN_POST_LIMIT = _int("HN_POST_LIMIT", 25)
+HN_COMMENTS_PER_POST = _int("HN_COMMENTS_PER_POST", 30)
+# Legacy aliases (other code may reference these)
+HN_TOP_LIMIT = _int("HN_TOP_LIMIT", HN_POST_LIMIT)
+HN_COMMENTS_LIMIT = _int("HN_COMMENTS_LIMIT", HN_COMMENTS_PER_POST)
 REDDIT_POSTS_PER_SUB = _int("REDDIT_POSTS_PER_SUB", 25)
 RSS_ENTRIES_PER_FEED = _int("RSS_ENTRIES_PER_FEED", 20)
 

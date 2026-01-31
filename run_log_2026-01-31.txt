@@ -1,0 +1,15 @@
+2026-01-31 14:25:53 [INFO] numexpr.utils: NumExpr defaulting to 8 threads.
+2026-01-31 14:25:56 [INFO] unmet.run.runner: coherence fail dropped cluster_id=dea7316c-bc34-401f-bb01-a6449b16fdc5 reason=insufficient support: snippet_keyword_hits=0 (need >=2), direct_indicator_hits=0 (need >=1)
+2026-01-31 14:26:09 [INFO] unmet.run.runner: buildability_gate_reject kind=catalyst index=0 reason=not_buildable
+2026-01-31 14:26:09 [INFO] unmet.run.runner: buildability_gate_reject kind=catalyst index=1 reason=not_buildable
+2026-01-31 14:26:09 [INFO] unmet.run.runner: buildability_gate_reject kind=catalyst index=4 reason=news_only
+2026-01-31 14:26:18 [INFO] unmet.run.runner: buildability_pass card idx=0 title=Slowed Incident Response Due to Poor On-Call Tooli
+2026-01-31 14:26:18 [INFO] unmet.run.runner: buildability_pass card idx=1 title=Untrusted VS Code Extensions Lead to Supply Chain 
+2026-01-31 14:26:18 [INFO] unmet.run.runner: buildability_pass card idx=2 title=VMware Migration Risks Due To Unexpected API Chang
+2026-01-31 14:26:18 [INFO] unmet.run.runner: buildability_pass card idx=3 title=Poor Internal Tool Discovery Hinders Productivity
+2026-01-31 14:26:18 [INFO] unmet.run.runner: published_card idx=0 title=Slowed Incident Response Due to Poor On-Call Tooli who_pays=SRE Managers at SaaS companies mvp=Alerts Dashboard showing unified alerts 
+2026-01-31 14:26:18 [INFO] unmet.run.runner: published_card idx=1 title=Untrusted VS Code Extensions Lead to Supply Chain  who_pays=Security Engineers at software companies mvp=VS Code extension scanner identifying kn
+2026-01-31 14:26:18 [INFO] unmet.run.runner: published_card idx=2 title=VMware Migration Risks Due To Unexpected API Chang who_pays=Platform Engineers at VMware Cloud Servi mvp=API Diff tool comparing VMware API versi
+2026-01-31 14:26:18 [INFO] unmet.run.runner: published_card idx=3 title=Poor Internal Tool Discovery Hinders Productivity who_pays=IT Managers at mid-sized companies mvp=Internal Tool Directory with search and 
+2026-01-31 14:26:19 [INFO] unmet.run.runner: Report for 2026-01-31 written to /Users/siddhibansal/Programming/personal_projects/2026/unmet/out/2026-01-31.md
+Report written to daily_reports and /out/<date>.md

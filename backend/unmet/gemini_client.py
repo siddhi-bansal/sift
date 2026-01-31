@@ -378,6 +378,123 @@ Snippets:
         return title
 
 
+def rename_to_failure_mode(title: str, evidence_snippets: list[str]) -> str:
+    """
+    Rewrite cluster/card title to failure-mode phrasing (who/what fails, not domain label).
+    Examples: "Software Supply Chain Vulnerabilities" → "One compromised maintainer infects downstream projects"
+    """
+    if not evidence_snippets:
+        return title
+    snippets_text = "\n".join(f"- {s}" for s in (evidence_snippets or [])[:10])
+    prompt = f"""Rewrite this title into "failure-mode phrasing": a short phrase (6–10 words) that describes a CONCRETE FAILURE or RECURRING COST, not a domain label.
+
+Bad (domain label): "Software Supply Chain Vulnerabilities", "Cloud Infrastructure Disruption", "AI Eroding Trust in Information"
+Good (failure mode): "One compromised maintainer infects downstream projects", "Platform policy shifts can break CSPs overnight", "Verification pipelines can't keep up with AI output"
+
+Current title: "{title}"
+
+Evidence snippets (use to ground the failure):
+{snippets_text[:4000]}
+
+Output valid JSON only, no markdown: {{ "new_title": "Failure-mode title here (6–10 words)" }}
+"""
+    try:
+        out = generate_text(prompt)
+        raw = out.replace("```json", "").replace("```", "").strip()
+        d = json.loads(raw)
+        new = (d.get("new_title") or title or "").strip()[:200]
+        return new if new else title
+    except Exception as e:
+        logger.warning("rename_to_failure_mode failed: %s", e)
+        return title
+
+
+def startup_grade_editor_gate(
+    pain_clusters: list[dict[str, Any]],
+    catalysts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    One Gemini call per day: from candidate pain clusters + catalysts, select items that can produce
+    startup-grade cards (buildable wedge, identifiable buyer, workflow pain). Reject off-scope, not buildable,
+    weak evidence, duplicate, news-only.
+    Returns: { "selected_pain_indices": [0,1,...], "selected_catalyst_indices": [0,1,...], "rejects": [{ "kind": "pain"|"catalyst", "index": int, "reason": str }] }
+    """
+    if not pain_clusters and not catalysts:
+        return {"selected_pain_indices": [], "selected_catalyst_indices": [], "rejects": []}
+
+    lines: list[str] = []
+    for i, c in enumerate(pain_clusters[:20]):
+        title = c.get("title") or ""
+        summary = (c.get("summary") or "")[:200]
+        snippets = (c.get("evidence_snippets") or [])[:5]
+        tags = (c.get("topic_tags") or [])[:5]
+        lines.append(f"[PAIN {i}] title={title} summary={summary} topic_tags={tags} snippets={snippets[:3]}")
+    for i, cat in enumerate(catalysts[:15]):
+        title = cat.get("title") or ""
+        what = (cat.get("what_changed") or "")[:150]
+        tags = (cat.get("topic_tags") or [])[:5]
+        wedge = (cat.get("opportunity_wedge") or "")[:150]
+        lines.append(f"[CATALYST {i}] title={title} what_changed={what} topic_tags={tags} wedge={wedge}")
+
+    text = "\n".join(lines)
+    prompt = f"""You are the Startup-Grade Editor. Select ONLY items that can produce a buildable startup/personal-project idea card.
+
+BUILDABILITY GATE – an item is ALLOWED only if ALL of:
+- Identifiable buyer who has budget or strong motivation (not generic "developers")
+- A workflow step that is blocked or costly (problem must include the workflow)
+- An MVP feature that can be built/tested quickly (concrete: scanner, diff, dashboard, CLI, not "improve support")
+- Falsifiable kill_criteria (how we'd learn we're wrong fast)
+
+REJECT with reason:
+- off-scope: excluded topic or not B2B/devtools
+- not_buildable: cannot name buyer + workflow + concrete MVP
+- weak_evidence: insufficient verbatim snippets or no clear pain
+- duplicate: same theme as another selected item
+- news_only: factual news only, no extractable pain/workflow/buyer (e.g. orbital data center plans with no buildable wedge)
+
+Output valid JSON only, no markdown:
+{{
+  "selected_pain_indices": [0, 1],
+  "selected_catalyst_indices": [0],
+  "rejects": [
+    {{ "kind": "pain", "index": 2, "reason": "news_only" }},
+    {{ "kind": "catalyst", "index": 1, "reason": "not_buildable" }}
+  ]
+}}
+
+Select 3–7 pain items and 0–5 catalyst items total so we can publish 3–5 idea cards. Prefer quality over quantity. Empty selection is OK if nothing passes.
+
+Candidates:
+{text[:14000]}
+"""
+    try:
+        raw = generate_text(prompt)
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        d = json.loads(raw)
+        pain_idx = d.get("selected_pain_indices") or []
+        cat_idx = d.get("selected_catalyst_indices") or []
+        rejects = d.get("rejects") or []
+        if not isinstance(pain_idx, list):
+            pain_idx = []
+        if not isinstance(cat_idx, list):
+            cat_idx = []
+        pain_idx = [int(x) for x in pain_idx if isinstance(x, (int, float)) and 0 <= int(x) < len(pain_clusters)]
+        cat_idx = [int(x) for x in cat_idx if isinstance(x, (int, float)) and 0 <= int(x) < len(catalysts)]
+        return {
+            "selected_pain_indices": pain_idx,
+            "selected_catalyst_indices": cat_idx,
+            "rejects": rejects,
+        }
+    except (json.JSONDecodeError, TypeError, ValueError) as e:
+        logger.warning("startup_grade_editor_gate parse failed: %s", e)
+        # Fallback: take first 5 pain, first 3 catalysts
+        return {
+            "selected_pain_indices": list(range(min(5, len(pain_clusters)))),
+            "selected_catalyst_indices": list(range(min(3, len(catalysts)))),
+            "rejects": [],
+        }
+
+
 def summarize_cluster(
     title: str,
     summary: str,
@@ -620,3 +737,191 @@ Catalysts:
     except Exception as e:
         logger.warning("compose_idea_cards failed: %s", e)
         return []
+
+
+# Minimum fraction of evidence bullets that must include a comment permalink (sanity check)
+EVIDENCE_COMMENT_PERMALINK_MIN_RATIO = 0.70
+
+
+def _format_evidence_bullets_for_prompt(bullets: list[dict[str, Any]]) -> str:
+    """Format evidence_bullets for the LLM: quote — Post: url — Comment: url or (none)."""
+    lines = []
+    for b in (bullets or [])[:15]:
+        quote = (b.get("quote") or "").strip()[:200]
+        post_url = b.get("post_url") or ""
+        comment_url = b.get("comment_url") or "(none)"
+        lines.append(f'- "{quote}" — Post: {post_url} — Comment: {comment_url}')
+    return "\n".join(lines) if lines else "(no structured evidence)"
+
+
+def _normalize_evidence_item(e: Any) -> dict[str, Any]:
+    """Normalize evidence entry to { quote, post_url, comment_url }. Legacy: string -> post_url/comment_url null."""
+    if isinstance(e, dict):
+        return {
+            "quote": str(e.get("quote") or "").strip()[:200],
+            "post_url": (e.get("post_url") or "").strip() or None,
+            "comment_url": (e.get("comment_url") or "").strip() or None,
+        }
+    return {"quote": str(e).strip()[:200], "post_url": None, "comment_url": None}
+
+
+def _evidence_comment_permalink_ratio(evidence: list[Any]) -> float:
+    """Fraction of evidence bullets that have a comment permalink (comment_url)."""
+    if not evidence:
+        return 0.0
+    normalized = [_normalize_evidence_item(e) for e in evidence]
+    with_comment = sum(1 for n in normalized if n.get("comment_url"))
+    return with_comment / len(normalized)
+
+
+def compose_startup_grade_cards(
+    pain_clusters: list[dict[str, Any]],
+    catalysts: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    One Gemini call: merge selected pain clusters + catalysts into 3–5 Startup-Grade Idea Cards.
+    Problem-centric, comment-derived evidence with post + comment permalinks. If <70% of evidence
+    bullets have comment permalinks, confidence is auto-downgraded.
+    """
+    if not pain_clusters and not catalysts:
+        return []
+
+    pain_parts = []
+    for c in pain_clusters[:15]:
+        bullets = c.get("evidence_bullets") or []
+        bullets_text = _format_evidence_bullets_for_prompt(bullets)
+        pain_parts.append(
+            f"[Pain] title={c.get('title','')} summary={c.get('summary','')[:300]}\nEvidence (quote — Post — Comment):\n{bullets_text}"
+        )
+    pain_text = "\n\n".join(pain_parts)
+    cat_text = "\n\n".join(
+        [
+            f"[Catalyst] title={c.get('title','')} what_changed={c.get('what_changed','')[:200]} topic_tags={c.get('topic_tags', [])[:5]} source_urls={c.get('source_urls', [])[:3]}"
+            for c in catalysts[:15]
+        ]
+    )
+
+    prompt = f"""You are an analyst writing for Unmet. You are given a set of Hacker News posts and deep comment threads (many comments per post). Your job is NOT to summarize. Your job is to extract startup-grade, buildable problems with paying buyers.
+
+HARD RULES:
+1) Comments are the primary signal. Use posts only for context.
+2) Evidence must be forensic, not abstract.
+   - Prefer direct quotes from comments.
+   - If paraphrasing, it must clearly imply a quotable comment.
+3) Every evidence bullet MUST include:
+   - a short quote/paraphrase
+   - the HN post link (https://news.ycombinator.com/item?id=POST_ID)
+   - the specific HN comment link when available (https://news.ycombinator.com/item?id=COMMENT_ID)
+4) A single problem may be supported by multiple HN posts. Prefer problems with multi-thread support.
+5) Only include problems that block someone from doing their job or create measurable risk (time, money, reliability, security).
+6) Explicitly state who pays (role + why it hits their metrics/budget).
+7) Add "Why existing tools fail" (1 sentence).
+8) "Why now" must include a forcing function (deadline, outage, policy change, platform shift, cost inflection).
+9) The wedge must be narrow, avoid automating core decisions, and be shippable by a small team in <90 days.
+10) If evidence is weak (post-only, no comment permalinks, vague claims), say so and lower confidence.
+
+OUTPUT FORMAT (STRICT). Output valid JSON array only, no markdown. 3–5 cards. Each card:
+{{
+  "title": "Problem Title (failure-mode phrasing)",
+  "hook": "8–14 words",
+  "problem": "One sentence.",
+  "evidence": [
+    {{ "quote": "short quote or paraphrase", "post_url": "https://news.ycombinator.com/item?id=POST_ID", "comment_url": "https://news.ycombinator.com/item?id=COMMENT_ID or null" }},
+    ...
+  ],
+  "who_pays": "Role + metric/budget impact.",
+  "why_existing_tools_fail": "One sentence.",
+  "why_now": ["Forcing function.", ...],
+  "wedge": {{
+    "icp": "Start with <buyer> who <situation>",
+    "mvp": "<first feature>",
+    "why_they_pay": "<metric>",
+    "first_channel": "<channel>",
+    "anti_feature": "<what you won't build>"
+  }},
+  "confidence": "high|med|low (based on independent commenters + cross-post support + evidence quality)",
+  "kill_criteria": "Clear invalidation condition."
+}}
+
+Pain clusters (use only the Evidence links provided; do not invent URLs):
+{pain_text[:12000]}
+
+Catalysts:
+{cat_text[:6000]}
+"""
+    try:
+        raw = generate_text(prompt)
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        arr = json.loads(raw) if raw.startswith("[") else []
+        if not isinstance(arr, list):
+            arr = []
+        out: list[dict[str, Any]] = []
+        for card in arr[:5]:
+            if not isinstance(card, dict):
+                continue
+            wedge = card.get("wedge")
+            if isinstance(wedge, dict):
+                wedge_out = {
+                    "icp": str(wedge.get("icp") or "").strip()[:300],
+                    "mvp": str(wedge.get("mvp") or "").strip()[:300],
+                    "why_they_pay": str(wedge.get("why_they_pay") or "").strip()[:200],
+                    "first_channel": str(wedge.get("first_channel") or "").strip()[:200],
+                    "anti_feature": str(wedge.get("anti_feature") or "").strip()[:200],
+                }
+            else:
+                wedge_out = {"icp": "", "mvp": "", "why_they_pay": "", "first_channel": "", "anti_feature": ""}
+            evidence_raw = card.get("evidence") or []
+            evidence_normalized = [_normalize_evidence_item(e) for e in evidence_raw][:5]
+            conf = (card.get("confidence") or "med").strip().lower()
+            if conf not in ("low", "med", "high"):
+                conf = "med"
+            ratio = _evidence_comment_permalink_ratio(evidence_normalized)
+            if ratio < EVIDENCE_COMMENT_PERMALINK_MIN_RATIO and conf == "high":
+                conf = "med"
+                logger.info("evidence_comment_permalink_ratio=%.2f < %.2f; downgraded confidence to med", ratio, EVIDENCE_COMMENT_PERMALINK_MIN_RATIO)
+            elif ratio < EVIDENCE_COMMENT_PERMALINK_MIN_RATIO and conf == "med":
+                conf = "low"
+                logger.info("evidence_comment_permalink_ratio=%.2f < %.2f; downgraded confidence to low", ratio, EVIDENCE_COMMENT_PERMALINK_MIN_RATIO)
+            out.append({
+                "title": str(card.get("title") or "")[:200],
+                "hook": str(card.get("hook") or "")[:500],
+                "problem": str(card.get("problem") or "")[:500],
+                "evidence": evidence_normalized,
+                "who_pays": str(card.get("who_pays") or "")[:200],
+                "why_existing_tools_fail": str(card.get("why_existing_tools_fail") or "").strip()[:300],
+                "stakes": [str(s).strip()[:200] for s in (card.get("stakes") or [])][:5],
+                "why_now": [str(w).strip()[:300] for w in (card.get("why_now") or [])][:5],
+                "wedge": wedge_out,
+                "confidence": conf,
+                "kill_criteria": str(card.get("kill_criteria") or "").strip()[:300],
+            })
+        return out
+    except Exception as e:
+        logger.warning("compose_startup_grade_cards failed: %s", e)
+        return []
+
+
+def generate_one_bet(cards: list[dict[str, Any]]) -> str:
+    """
+    One macro prediction from the set of published cards (not a wedge).
+    E.g. "Teams will treat AI output as hostile input by default."
+    """
+    if not cards:
+        return "Worth exploring: re-run with more data."
+    titles = [c.get("title") or "" for c in cards[:5]]
+    problems = [c.get("problem") or "" for c in cards[:5]]
+    text = "\n".join([f"Card: {t}\nProblem: {p}" for t, p in zip(titles, problems)])
+    prompt = f"""From these startup-grade idea cards, state ONE macro prediction (a trend or shift), not a product wedge.
+Example: "Teams will treat AI output as hostile input by default." or "Compliance will become a first-class build step."
+Output a single sentence only, no preamble.
+
+Cards:
+{text[:3000]}
+"""
+    try:
+        out = generate_text(prompt)
+        line = (out or "").strip().split("\n")[0].strip()
+        return line[:300] if line else "Worth exploring: re-run with more data."
+    except Exception as e:
+        logger.warning("generate_one_bet failed: %s", e)
+        return "Worth exploring: re-run with more data."

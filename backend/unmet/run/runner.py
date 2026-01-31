@@ -8,24 +8,34 @@ from typing import Any
 
 from .. import db
 from ..analyze.topic_coherence import validate_topic_coherence
-from ..gemini_client import catalyst_bullets, compose_idea_cards, rename_to_match_evidence, summarize_cluster
+from ..gemini_client import (
+    catalyst_bullets,
+    compose_startup_grade_cards,
+    generate_one_bet,
+    rename_to_failure_mode,
+    rename_to_match_evidence,
+    startup_grade_editor_gate,
+    summarize_cluster,
+)
 from ..newsletter_style import (
-    format_idea_card,
+    format_startup_grade_card,
     get_intro,
-    get_todays_themes_from_idea_cards,
+    get_todays_themes_from_startup_cards,
+    repair_startup_grade_card,
+    validate_startup_grade_card_split,
 )
 
 logger = logging.getLogger(__name__)
 
 
 def _cluster_items_for_date(date_str: str) -> dict[str, list[dict[str, Any]]]:
-    """Return cluster_id -> list of raw_items in that cluster. Backward compatible if evidence_snippets missing."""
+    """Return cluster_id -> list of raw_items in that cluster. Includes metadata and source_id for evidence links."""
     with db.get_conn() as conn:
         cur = conn.cursor()
         try:
             cur.execute(
                 """
-                SELECT c.id::text AS cluster_id, r.id, r.title, r.text, r.url, r.source, r.evidence_snippets
+                SELECT c.id::text AS cluster_id, r.id, r.source_id, r.title, r.text, r.url, r.source, r.evidence_snippets, r.metadata
                 FROM clusters c
                 JOIN cluster_items ci ON ci.cluster_id = c.id
                 JOIN raw_items r ON r.id = ci.raw_item_id
@@ -39,7 +49,7 @@ def _cluster_items_for_date(date_str: str) -> dict[str, list[dict[str, Any]]]:
                 conn.rollback()
                 cur.execute(
                     """
-                    SELECT c.id::text AS cluster_id, r.id, r.title, r.text, r.url, r.source
+                    SELECT c.id::text AS cluster_id, r.id, r.source_id, r.title, r.text, r.url, r.source, r.metadata
                     FROM clusters c
                     JOIN cluster_items ci ON ci.cluster_id = c.id
                     JOIN raw_items r ON r.id = ci.raw_item_id
@@ -56,13 +66,79 @@ def _cluster_items_for_date(date_str: str) -> dict[str, list[dict[str, Any]]]:
         cid = r["cluster_id"]
         if cid not in out:
             out[cid] = []
-        row = {"id": r["id"], "title": r["title"], "text": r["text"], "url": r["url"], "source": r["source"]}
+        row = {
+            "id": r["id"],
+            "source_id": r.get("source_id"),
+            "title": r["title"],
+            "text": r["text"],
+            "url": r["url"],
+            "source": r["source"],
+            "metadata": r.get("metadata") or {},
+        }
         if r.get("evidence_snippets") is not None:
             row["evidence_snippets"] = list(r["evidence_snippets"]) if r["evidence_snippets"] else []
         else:
             row["evidence_snippets"] = []
         out[cid].append(row)
     return out
+
+
+def _build_evidence_bullets(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Build structured evidence bullets from cluster items: quote, post_id, post_url, comment_id, comment_url.
+    HN items: use source_id as post_id, url as post_url; match evidence_snippets to metadata.comments for comment links.
+    """
+    bullets: list[dict[str, Any]] = []
+    for it in items[:15]:
+        post_id = it.get("source_id") or ""
+        post_url = it.get("url") or (f"https://news.ycombinator.com/item?id={post_id}" if post_id else "")
+        if it.get("source") != "hn" or not post_id:
+            # Non-HN: post-level only
+            for s in (it.get("evidence_snippets") or [])[:3]:
+                if (s or "").strip():
+                    bullets.append({
+                        "quote": (s or "").strip()[:200],
+                        "post_id": post_id,
+                        "post_url": post_url,
+                        "comment_id": None,
+                        "comment_url": None,
+                    })
+            continue
+        comments = (it.get("metadata") or {}).get("comments") or []
+        snippet_to_comment: dict[str, dict] = {}
+        for c in comments:
+            ct = (c.get("text") or "").strip()
+            if not ct:
+                continue
+            for s in (it.get("evidence_snippets") or []):
+                s = (s or "").strip()
+                if not s or len(s.split()) > 12:
+                    continue
+                if s in ct or (len(s) >= 8 and s.lower() in ct.lower()):
+                    snippet_to_comment[s] = c
+                    break
+        for s in (it.get("evidence_snippets") or [])[:5]:
+            s = (s or "").strip()
+            if not s:
+                continue
+            c = snippet_to_comment.get(s)
+            if c:
+                bullets.append({
+                    "quote": s[:200],
+                    "post_id": post_id,
+                    "post_url": c.get("post_url") or post_url,
+                    "comment_id": c.get("comment_id"),
+                    "comment_url": c.get("comment_url"),
+                })
+            else:
+                bullets.append({
+                    "quote": s[:200],
+                    "post_id": post_id,
+                    "post_url": post_url,
+                    "comment_id": None,
+                    "comment_url": None,
+                })
+    return bullets[:15]
 
 
 def _catalyst_dedupe_by_topic(catalysts: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -175,64 +251,101 @@ def run_report(target_date: str | None = None) -> str:
         )
     catalysts_deduped = _catalyst_dedupe_by_topic(catalysts)
 
-    # 5) Build pain_clusters payload for compose_idea_cards
+    # 5) Build pain_clusters payload with topic_tags for Startup-Grade Editor Gate
     pain_clusters_for_cards: list[dict[str, Any]] = []
     for c in clusters_for_cards:
         cid = str(c["id"])
         items = items_by_cluster.get(cid, [])
         evidence_snippets = [s for it in items for s in (it.get("evidence_snippets") or [])][:10]
+        evidence_bullets = _build_evidence_bullets(items)
         links = list(c.get("example_urls") or [])[:5]
         if not links:
             links = [it.get("url") for it in items if it.get("url")][:5]
+        topic_tags: list[str] = []
+        for it in items:
+            topic_tags.extend(labels.get(str(it["id"]), {}).get("topic_tags") or [])
         pain_clusters_for_cards.append({
             "title": c.get("title") or "",
             "summary": c.get("summary") or "",
             "evidence_snippets": evidence_snippets,
+            "evidence_bullets": evidence_bullets,
             "example_urls": links,
             "links": links,
+            "topic_tags": list(dict.fromkeys(topic_tags))[:10],
         })
 
-    # 6) Compose idea cards (one Gemini call)
-    idea_cards = compose_idea_cards(pain_clusters_for_cards, catalysts_deduped)
+    # 5b) Startup-Grade Editor Gate: select items that pass buildability; log rejects
+    gate_result = startup_grade_editor_gate(pain_clusters_for_cards, catalysts_deduped)
+    selected_pain_idx = gate_result.get("selected_pain_indices") or []
+    selected_cat_idx = gate_result.get("selected_catalyst_indices") or []
+    rejects = gate_result.get("rejects") or []
+    for r in rejects:
+        logger.info("buildability_gate_reject kind=%s index=%s reason=%s", r.get("kind"), r.get("index"), r.get("reason"))
 
-    # 7) Build markdown from idea cards; "Today's themes:" from top 2–3 idea_title
+    selected_pain_clusters = [pain_clusters_for_cards[i] for i in selected_pain_idx if 0 <= i < len(pain_clusters_for_cards)]
+    selected_catalysts = [catalysts_deduped[i] for i in selected_cat_idx if 0 <= i < len(catalysts_deduped)]
+
+    # 5c) Failure-mode titles for selected pain clusters
+    for cluster in selected_pain_clusters:
+        title = cluster.get("title") or ""
+        snippets = cluster.get("evidence_snippets") or []
+        if title and snippets:
+            new_title = rename_to_failure_mode(title, snippets)
+            if new_title and new_title != title:
+                logger.info("failure_mode_rename old=%s new=%s", title[:50], new_title[:50])
+                cluster["title"] = new_title
+
+    # 6) Compose Startup-Grade Idea Cards (one Gemini call)
+    raw_cards = compose_startup_grade_cards(selected_pain_clusters, selected_catalysts)
+
+    # 6b) Validate each card; drop if invalid (buildability gate)
+    idea_cards: list[dict[str, Any]] = []
+    validation_rejects: list[dict[str, Any]] = []
+    for i, card in enumerate(raw_cards):
+        errs = validate_startup_grade_card(card)
+        if not errs:
+            idea_cards.append(card)
+            logger.info("buildability_pass card idx=%s title=%s", i, (card.get("title") or "")[:50])
+        else:
+            validation_rejects.append({"title": card.get("title") or "", "errors": errs})
+            logger.info("buildability_fail card idx=%s title=%s errors=%s", i, (card.get("title") or "")[:50], errs)
+
+    # 7) Report: Header, Today's themes, 3–5 Startup-Grade Idea Cards, One bet, Rejects (for transparency)
     lines = [f"# Unmet — {d}", "", get_intro(), "", ""]
-    themes_line = get_todays_themes_from_idea_cards(idea_cards, top_n=3)
+    themes_line = get_todays_themes_from_startup_cards(idea_cards, top_n=3)
     if themes_line:
         lines.append(themes_line)
         lines.append("")
 
-    lines.append("## Idea Cards")
+    lines.append("## Startup-Grade Idea Cards")
     lines.append("")
-    bet_candidates: list[tuple[Any, float]] = []
     for i, card in enumerate(idea_cards):
-        lines.append(format_idea_card(card))
-        # Debug logging: which snippets supported pain/catalyst, which URLs, coherence
-        ps = card.get("pain_signal") or {}
-        cs = card.get("catalyst_signal") or {}
-        pain_snips = ps.get("evidence_snippets") or []
-        cat_snips = cs.get("evidence_snippets") or []
-        urls = list(ps.get("links") or []) + list(cs.get("links") or [])
+        lines.append(format_startup_grade_card(card))
         logger.info(
-            "published_card idx=%s idea_title=%s pain_snippets=%s catalyst_snippets=%s urls=%s",
+            "published_card idx=%s title=%s who_pays=%s mvp=%s",
             i,
-            (card.get("idea_title") or "")[:50],
-            pain_snips[:3],
-            cat_snips[:3],
-            urls[:5],
+            (card.get("title") or "")[:50],
+            (card.get("who_pays") or "")[:40],
+            ((card.get("wedge") or {}).get("mvp") or "")[:40],
         )
-        wedge = card.get("wedge") or ""
-        if wedge and "unclear from evidence" not in wedge.lower():
-            bet_candidates.append((card, card.get("confidence", 0.5)))
 
     lines.append("---")
     lines.append("")
-    if bet_candidates:
-        best = max(bet_candidates, key=lambda x: x[1])
-        lines.append("One line I'd bet on: " + (best[0].get("wedge") or ""))
-    else:
-        lines.append("Worth exploring: re-run with more data.")
+    one_bet = generate_one_bet(idea_cards)
+    lines.append("One bet: " + one_bet)
     lines.append("")
+
+    # Rejects (editor gate + validation drops) for transparency
+    if rejects or validation_rejects:
+        lines.append("---")
+        lines.append("")
+        lines.append("## Rejects (buildability gate)")
+        lines.append("")
+        for r in rejects:
+            lines.append(f"- **{r.get('kind', '')}** index {r.get('index', '')}: {r.get('reason', '')}")
+        for vr in validation_rejects:
+            lines.append(f"- **Card dropped** \"{vr.get('title', '')[:60]}\": {', '.join(vr.get('errors', []))}")
+        lines.append("")
 
     md = "\n".join(lines)
     db.upsert_daily_report(d, md)
