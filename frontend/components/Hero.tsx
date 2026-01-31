@@ -20,21 +20,14 @@ export default function Hero({
       <div className="hero-content">
         <p className="hero-kicker">For builders & founders</p>
         <h1 className="hero-headline">
-          Real problems.
-          <br />
-          Real opportunities.
+          <span className="hero-headline__line">Real problems.</span>
+          <span className="hero-headline__line">Real opportunities.</span>
         </h1>
         <p className="hero-lede">
           Daily pain signals and industry catalysts from Hacker News, Reddit, and tech — so you spot what to build next.
         </p>
-        <a href="#signup" className="btn btn-primary">
-          Get the digest
-        </a>
       </div>
-      <div className="hero-mascot-wrap">
-        <div className="hero-mascot" aria-hidden>
-          <Mascot size={240} animated />
-        </div>
+      <div className="hero-cta-wrap">
         {signup && (
           <div className="hero-signup" aria-label="Sign up">
             {signup.status === "success" ? (
@@ -70,6 +63,11 @@ export default function Hero({
             )}
           </div>
         )}
+      </div>
+      <div className="hero-mascot-wrap">
+        <div className="hero-mascot" aria-hidden>
+          <Mascot size={240} animated />
+        </div>
       </div>
     </section>
   );
