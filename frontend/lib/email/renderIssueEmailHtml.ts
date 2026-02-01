@@ -1,28 +1,31 @@
 /**
- * Production HTML email template — Unmet digest.
+ * Production HTML email template — Sift digest.
  *
  * README (safe to edit / structure):
  * ---------------------------------
- * - SAFE TO EDIT: Brand tokens (NAVY, PURPLE, YELLOW, etc.), "Unmet" label text,
+ * - SAFE TO EDIT: Brand tokens (NAVY, PURPLE, YELLOW, etc.), "Sift" label text,
  *   footer copy, preheader text logic, and the optional viewInBrowserUrl /
  *   unsubscribeUrl placeholders. Do not remove inline styles from critical
  *   elements (tables, td, a, buttons); email clients rely on them.
  *
  * - INLINE vs <style>:
  *   All critical styling (colors, padding, font, borders, widths) is INLINE on
- *   table/td/a/span so Gmail, Outlook, Apple Mail render correctly. The only
- *   <style> block contains: (1) resets for body/table, (2) responsive
- *   max-width/padding for .email-wrapper and .email-inner at 620px, (3)
- *   prefers-color-scheme: light overrides so clients that support it show a
- *   light-background variant. Clients that ignore <style> get the inline
- *   default (dark navy + light card content), which is the intended fallback.
+ *   table/td/a/span so Gmail, Outlook, Apple Mail render correctly. Core text
+ *   uses solid hex (no RGBA) to reduce auto-invert artifacts. The <style>
+ *   block contains: (1) resets and responsive rules at 620px, (2)
+ *   @media (prefers-color-scheme: light) to flip bands/cards to white and
+ *   text to #111827/#374151, (3) @media (prefers-color-scheme: dark) to
+ *   reinforce the default dark theme, (4) [data-ogsc] selectors for
+ *   Outlook.com dark-mode fallbacks. bgcolor attributes on wrapper/header/
+ *   bands/cards/footer provide Outlook desktop fallbacks.
  *
  * - KNOWN CLIENT LIMITATIONS:
  *   Gmail may strip or move <style>; Outlook (Windows) uses Word engine and
  *   ignores many CSS properties (border-radius, box-shadow). Buttons are
  *   table-based (bulletproof) for maximum compatibility. No external fonts;
- *   system stack only. Dark mode via prefers-color-scheme is supported in
- *   Apple Mail and some others; Gmail/Outlook will show the inline default.
+ *   system stack only. Default design = dark theme (navy #0B1020, dark cards
+ *   #111827); clients that support prefers-color-scheme get light/dark
+ *   overrides; others get the inline default.
  */
 
 import type { Issue, StartupGradeCard, WedgeBlock } from "./types";
@@ -32,17 +35,25 @@ import {
   escapeHtml,
 } from "./sanitizeMarkdown";
 
-// ---- Brand tokens (from site: navy, purple, yellow; safe to change) ----
+// ---- Brand tokens (default = dark theme; solid hex to avoid invert artifacts) ----
 const NAVY = "#0B1020";
 const PURPLE = "#7C3AED";
 const YELLOW = "#FBBF24";
-const TEXT_DARK = "rgba(255,255,255,0.92)";
-const TEXT_SOFT_DARK = "rgba(255,255,255,0.75)";
-const TEXT_LIGHT = "#1a1a1a";
-const MUTED_LIGHT = "#555";
-const CARD_BG_DARK = "#16181d";
-const CARD_BG_LIGHT = "#ffffff";
+const BAND_TITLE = "#F9FAFB";
+const BAND_BODY = "#CBD5E1";
+const CARD_BG_DARK = "#111827";
+const CARD_BORDER_DARK = "rgba(255,255,255,0.12)";
+const CARD_TITLE = "#F9FAFB";
+const CARD_BODY = "#CBD5E1";
+const CARD_LABEL = "#E5E7EB";
+const WARN_BG_DARK = "#1F2937";
+const WARN_TEXT_DARK = "#CBD5E1";
+const FOOTER_TEXT = "#CBD5E1";
+const FOOTER_BORDER = "#374151";
+const TEXT_LIGHT = "#111827";
+const BODY_LIGHT = "#374151";
 const BORDER_LIGHT = "#e5e7eb";
+const CARD_BG_LIGHT = "#ffffff";
 
 const FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -64,7 +75,7 @@ function parseThemes(themesLine: string | undefined): string[] {
 
 function renderWedge(w: WedgeBlock): string {
   const parts: string[] = [];
-  const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${MUTED_LIGHT};`;
+  const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
   const cellStyle = `${CELL_BASE} padding: 0; ${liStyle}`;
   if (w.icp)
     parts.push(
@@ -106,98 +117,91 @@ function bulletproofButton(href: string, label: string): string {
 </table>`;
 }
 
+/** Renders one idea card; default = dark (bg #111827, solid hex text). */
 function renderCard(
   card: StartupGradeCard,
   cardIndex: number,
-  viewInBrowserUrl: string,
-  darkMode: boolean
+  viewInBrowserUrl: string
 ): string {
-  const isLight = !darkMode;
-  const bg = isLight ? CARD_BG_LIGHT : CARD_BG_DARK;
-  const titleColor = isLight ? TEXT_LIGHT : TEXT_DARK;
-  const bodyColor = isLight ? MUTED_LIGHT : TEXT_SOFT_DARK;
-  const labelColor = isLight ? "#374151" : TEXT_SOFT_DARK;
-  const borderColor = isLight ? BORDER_LIGHT : "rgba(255,255,255,0.12)";
-
   const cellStyle = `${CELL_BASE} padding: 0;`;
   const rows: string[] = [];
 
   if (card.is_draft) {
     rows.push(
-      `<tr><td style="${cellStyle} font-size: 13px; color: ${bodyColor};"><em>Draft — needs more receipts</em></td></tr>`
+      `<tr><td style="${cellStyle} font-size: 13px; color: ${CARD_BODY};"><em>Draft — needs more receipts</em></td></tr>`
     );
   }
   rows.push(
-    `<tr><td style="${cellStyle} margin: 0 0 6px 0; font-size: 16px; font-weight: 700; line-height: 1.3; color: ${titleColor};">${markdownInlineToHtml(card.title)}</td></tr>`
+    `<tr><td style="${cellStyle} margin: 0 0 6px 0; font-size: 16px; font-weight: 700; line-height: 1.3; color: ${CARD_TITLE};">${markdownInlineToHtml(card.title)}</td></tr>`
   );
   if (card.hook) {
     rows.push(
-      `<tr><td style="${cellStyle} margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.hook)}</td></tr>`
+      `<tr><td style="${cellStyle} margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.hook)}</td></tr>`
     );
   }
   if (card.problem) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Problem:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.problem)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Problem:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.problem)}</p></td></tr>`
     );
   }
   if (card.evidence.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${bodyColor};`;
+    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
     const bullets = card.evidence
       .map((e) => `<li style="${liStyle}">${markdownInlineToHtml(e)}</li>`)
       .join("");
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Evidence:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Evidence:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
     );
   }
   if (card.who_pays) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Who pays:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.who_pays)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Who pays:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.who_pays)}</p></td></tr>`
     );
   }
   if (card.why_existing_tools_fail) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Why existing tools fail:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.why_existing_tools_fail)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Why existing tools fail:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.why_existing_tools_fail)}</p></td></tr>`
     );
   }
   if (card.stakes.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${bodyColor};`;
+    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
     const bullets = card.stakes
       .map((s) => `<li style="${liStyle}">${markdownInlineToHtml(s)}</li>`)
       .join("");
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Stakes:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Stakes:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
     );
   }
   if (card.why_now.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${bodyColor};`;
+    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
     const bullets = card.why_now
       .map((w) => `<li style="${liStyle}">${markdownInlineToHtml(w)}</li>`)
       .join("");
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Why now:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Why now:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
     );
   }
   const wedgeHtml = renderWedge(card.wedge);
   if (wedgeHtml) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Wedge:</p>${wedgeHtml}</td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Wedge:</p>${wedgeHtml}</td></tr>`
     );
   }
   if (card.confidence) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Confidence:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.confidence)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Confidence:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.confidence)}</p></td></tr>`
     );
   }
   if (card.kill_criteria) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Kill criteria:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${bodyColor};">${markdownInlineToHtml(card.kill_criteria)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Kill criteria:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.kill_criteria)}</p></td></tr>`
     );
   }
   if (card.warnings && card.warnings.length > 0) {
     const warnText = markdownInlineToHtml(card.warnings.join("; "));
-    const warnBox = `margin: 8px 0 0 0; padding: 10px 12px; font-size: 12px; line-height: 1.4; color: ${bodyColor}; background: rgba(0,0,0,0.06); border-radius: 4px;`;
+    const warnBox = `margin: 8px 0 0 0; padding: 10px 12px; font-size: 12px; line-height: 1.4; color: ${WARN_TEXT_DARK}; background-color: ${WARN_BG_DARK}; border-radius: 4px;`;
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${labelColor};">Warnings:</p><div style="${warnBox}">${warnText}</div></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Warnings:</p><div class="email-warn" style="${warnBox}">${warnText}</div></td></tr>`
     );
   }
 
@@ -208,7 +212,7 @@ function renderCard(
     `<tr><td style="${cellStyle} padding-top: 8px;">${ctaHtml}</td></tr>`
   );
 
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px; border: 1px solid ${borderColor}; border-radius: 8px; background: ${bg};"><tr><td style="${CELL_BASE} padding: 16px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>${rows.join("")}</tbody></table></td></tr></table>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-card" style="margin-bottom: 24px; border: 1px solid ${CARD_BORDER_DARK}; border-radius: 8px; background-color: ${CARD_BG_DARK};" bgcolor="${CARD_BG_DARK}"><tr><td style="${CELL_BASE} padding: 16px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>${rows.join("")}</tbody></table></td></tr></table>`;
 }
 
 export interface RenderEmailOptions {
@@ -240,26 +244,26 @@ export function renderIssueEmailHtml(
   const themes = parseThemes(issue.themes_line);
   const sectionTitlePlain = stripLeadingHashes(issue.section_title ?? "");
 
-  // ---- Header: purple brand bar ----
+  // ---- Header: purple brand bar (bgcolor for Outlook) ----
   const headerBar = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${PURPLE};" tpl="header">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${PURPLE};" bgcolor="${PURPLE}" tpl="header">
   <tr>
     <td style="${CELL_BASE} padding: 14px ${PADDING};">
-      <span style="font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Unmet</span>
+      <span style="font-size: 18px; font-weight: 700; color: #000000; letter-spacing: -0.02em;">Sift</span>
     </td>
   </tr>
 </table>`;
 
-  // ---- Title + date (below header, on navy in default) ----
-  const titleDateStyle = `margin: 0 0 4px 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: ${TEXT_DARK};`;
-  const dateStyle = `margin: 0; font-size: 14px; color: ${TEXT_SOFT_DARK};`;
+  // ---- Title + date (below header, navy; solid hex text) ----
+  const titleDateStyle = `margin: 0 0 4px 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: ${BAND_TITLE};`;
+  const dateStyle = `margin: 0; font-size: 14px; color: ${BAND_BODY};`;
   const titleDateBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: ${PADDING};">
+    <td style="${CELL_BASE} padding: ${PADDING}; color: ${BAND_BODY};">
       ${block("h1", titleDateStyle, escapeHtml(titlePlain))}
       ${issue.date ? `<p style="${dateStyle}">${escapeHtml(issue.date)}</p>` : ""}
-      ${issue.intro ? block("p", `margin: 12px 0 0 0; font-size: 15px; line-height: 1.5; color: ${TEXT_SOFT_DARK};`, markdownInlineToHtml(issue.intro)) : ""}
+      ${issue.intro ? block("p", `margin: 12px 0 0 0; font-size: 15px; line-height: 1.5; color: ${BAND_BODY};`, markdownInlineToHtml(issue.intro)) : ""}
     </td>
   </tr>
 </table>`;
@@ -273,7 +277,7 @@ export function renderIssueEmailHtml(
           .join("")
       : "";
   const themesBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
     <td style="${CELL_BASE} padding: 0 ${PADDING} 20px ${PADDING};">
       ${themesHtml}
@@ -283,21 +287,21 @@ export function renderIssueEmailHtml(
 
   // ---- Section title ----
   const sectionTitleBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
     <td style="${CELL_BASE} padding: 0 ${PADDING} 12px ${PADDING};">
-      <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: ${TEXT_DARK};">${escapeHtml(sectionTitlePlain)}</h2>
+      <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: ${BAND_TITLE};">${escapeHtml(sectionTitlePlain)}</h2>
     </td>
   </tr>
 </table>`;
 
-  // ---- Cards (each with CTA); card surface is always light for contrast on navy ----
+  // ---- Cards (each with CTA); default = dark cards #111827 ----
   const cardsHtml = issue.cards
-    .map((card, i) => renderCard(card, i, viewInBrowserUrl, false))
+    .map((card, i) => renderCard(card, i, viewInBrowserUrl))
     .join("");
 
   const cardsBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
     <td style="${CELL_BASE} padding: 0 ${PADDING};">
       ${cardsHtml}
@@ -305,18 +309,18 @@ export function renderIssueEmailHtml(
   </tr>
 </table>`;
 
-  // ---- One bet + Rejects ----
+  // ---- One bet + Rejects (solid hex text) ----
   const footerParts: string[] = [];
   if (issue.one_bet) {
     footerParts.push(
-      `<p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${TEXT_SOFT_DARK};"><strong>One bet:</strong> ${markdownInlineToHtml(issue.one_bet)}</p>`
+      `<p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${BAND_BODY};"><strong>One bet:</strong> ${markdownInlineToHtml(issue.one_bet)}</p>`
     );
   }
   if (issue.rejects.length > 0) {
     footerParts.push(
-      `<h2 style="margin: 16px 0 8px 0; font-size: 18px; font-weight: 700; color: ${TEXT_DARK};">Rejects (buildability gate)</h2>`
+      `<h2 style="margin: 16px 0 8px 0; font-size: 18px; font-weight: 700; color: ${BAND_TITLE};">Rejects (buildability gate)</h2>`
     );
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${TEXT_SOFT_DARK};`;
+    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${BAND_BODY};`;
     const listItems = issue.rejects
       .map((r) => `<li style="${liStyle}">${markdownInlineToHtml(r)}</li>`)
       .join("");
@@ -328,23 +332,23 @@ export function renderIssueEmailHtml(
   const extraBlock =
     footerParts.length > 0
       ? `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: 12px ${PADDING} 24px ${PADDING};">
+    <td style="${CELL_BASE} padding: 12px ${PADDING} 24px ${PADDING}; color: ${BAND_BODY};">
       ${footerParts.join("")}
     </td>
   </tr>
 </table>`
       : "";
 
-  // ---- Footer: unsubscribe + view in browser ----
-  const footerLinkStyle = `color: ${TEXT_SOFT_DARK}; text-decoration: underline; font-size: 13px;`;
+  // ---- Footer: unsubscribe + view in browser (solid hex) ----
+  const footerLinkStyle = `color: ${FOOTER_TEXT}; text-decoration: underline; font-size: 13px;`;
   const footerBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY}; border-top: 1px solid rgba(255,255,255,0.1);" tpl="footer">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY}; border-top: 1px solid ${FOOTER_BORDER};" bgcolor="${NAVY}" tpl="footer">
   <tr>
-    <td style="${CELL_BASE} padding: 20px ${PADDING};">
+    <td style="${CELL_BASE} padding: 20px ${PADDING}; color: ${FOOTER_TEXT};">
       <a href="${escapeHtml(unsubscribeUrl)}" style="${footerLinkStyle}">Unsubscribe</a>
-      <span style="color: ${TEXT_SOFT_DARK}; font-size: 13px;"> &nbsp;·&nbsp; </span>
+      <span style="color: ${FOOTER_TEXT}; font-size: 13px;"> &nbsp;·&nbsp; </span>
       <a href="${escapeHtml(viewInBrowserUrl)}" style="${footerLinkStyle}">View in browser</a>
     </td>
   </tr>
@@ -360,7 +364,7 @@ export function renderIssueEmailHtml(
     footerBlock;
 
   const inner = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-inner" align="center" style="max-width: 600px; width: 100%; background-color: ${NAVY};">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-inner" align="center" style="max-width: 600px; width: 100%; background-color: ${NAVY};" bgcolor="${NAVY}">
   <tr>
     <td style="${CELL_BASE} padding: 0;">
       ${bodyContent}
@@ -384,16 +388,60 @@ export function renderIssueEmailHtml(
       .email-inner { width: 100% !important; max-width: 100% !important; }
       .email-inner td { padding-left: 12px !important; padding-right: 12px !important; }
     }
+    /* Light mode: bands and cards white, text dark */
     @media (prefers-color-scheme: light) {
+      .email-body-dark { background-color: #f5f5f5 !important; }
+      .email-body-dark .email-wrapper,
+      .email-body-dark .email-wrapper td { background-color: #f5f5f5 !important; }
       .email-body-dark .email-inner { background-color: #f5f5f5 !important; }
       .email-body-dark .email-inner table[tpl="header"] { background-color: ${PURPLE} !important; }
-      .email-body-dark .email-inner table[tpl="band"] { background-color: #f5f5f5 !important; }
-      .email-body-dark .email-inner table[tpl="band"] td { color: #1a1a1a !important; }
-      .email-body-dark .email-inner table[tpl="band"] h1 { color: #1a1a1a !important; }
-      .email-body-dark .email-inner table[tpl="band"] p { color: #555 !important; }
-      .email-body-dark .email-inner table[tpl="footer"] { background-color: #f5f5f5 !important; border-top-color: #e5e7eb !important; }
-      .email-body-dark .email-inner table[tpl="footer"] a { color: #7C3AED !important; }
+      .email-body-dark .email-inner table[tpl="band"],
+      .email-body-dark .email-inner table[tpl="band"] td { background-color: #ffffff !important; color: ${TEXT_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="band"] h1,
+      .email-body-dark .email-inner table[tpl="band"] h2 { color: ${TEXT_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="band"] p,
+      .email-body-dark .email-inner table[tpl="band"] li { color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_LIGHT} !important; border-color: ${BORDER_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card td,
+      .email-body-dark .email-inner .email-card p,
+      .email-body-dark .email-inner .email-card li { color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card h3,
+      .email-body-dark .email-inner .email-card [style*="font-weight: 700"] { color: ${TEXT_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card [style*="font-weight: 600"] { color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card .email-warn { background-color: #f3f4f6 !important; color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] { background-color: #ffffff !important; border-top-color: ${BORDER_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] td,
+      .email-body-dark .email-inner table[tpl="footer"] a { color: ${PURPLE} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] span { color: ${BODY_LIGHT} !important; }
     }
+    /* Dark mode: reinforce navy/card dark (default) */
+    @media (prefers-color-scheme: dark) {
+      .email-body-dark { background-color: ${NAVY} !important; }
+      .email-body-dark .email-wrapper,
+      .email-body-dark .email-wrapper td { background-color: ${NAVY} !important; }
+      .email-body-dark .email-inner { background-color: ${NAVY} !important; }
+      .email-body-dark .email-inner table[tpl="band"],
+      .email-body-dark .email-inner table[tpl="band"] td { background-color: ${NAVY} !important; color: ${BAND_BODY} !important; }
+      .email-body-dark .email-inner table[tpl="band"] h1,
+      .email-body-dark .email-inner table[tpl="band"] h2 { color: ${BAND_TITLE} !important; }
+      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_DARK} !important; border-color: ${CARD_BORDER_DARK} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] { background-color: ${NAVY} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] td,
+      .email-body-dark .email-inner table[tpl="footer"] a { color: ${FOOTER_TEXT} !important; }
+    }
+    /* Outlook.com dark: [data-ogsc] = dark mode active */
+    [data-ogsc] .email-body-dark,
+    [data-ogsc] .email-wrapper,
+    [data-ogsc] .email-wrapper td { background-color: ${NAVY} !important; }
+    [data-ogsc] .email-inner { background-color: ${NAVY} !important; }
+    [data-ogsc] .email-inner table[tpl="band"],
+    [data-ogsc] .email-inner table[tpl="band"] td { background-color: ${NAVY} !important; color: ${BAND_BODY} !important; }
+    [data-ogsc] .email-inner table[tpl="band"] h1,
+    [data-ogsc] .email-inner table[tpl="band"] h2 { color: ${BAND_TITLE} !important; }
+    [data-ogsc] .email-inner .email-card { background-color: ${CARD_BG_DARK} !important; }
+    [data-ogsc] .email-inner table[tpl="footer"] { background-color: ${NAVY} !important; }
+    [data-ogsc] .email-inner table[tpl="footer"] td,
+    [data-ogsc] .email-inner table[tpl="footer"] a { color: ${FOOTER_TEXT} !important; }
   </style>
   <!--[if mso]>
   <noscript>
@@ -407,9 +455,9 @@ export function renderIssueEmailHtml(
 </head>
 <body class="email-body-dark" style="margin: 0; padding: 0; background-color: ${NAVY}; font-family: ${FONT}; -webkit-text-size-adjust: 100%;">
 ${preheaderHtml}
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-wrapper" style="background-color: ${NAVY};">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-wrapper" style="background-color: ${NAVY};" bgcolor="${NAVY}">
   <tr>
-    <td align="center" style="padding: 24px 16px;">
+    <td align="center" style="padding: 24px 16px;" bgcolor="${NAVY}">
       ${inner}
     </td>
   </tr>
