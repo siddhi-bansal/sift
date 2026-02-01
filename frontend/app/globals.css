@@ -369,39 +369,56 @@ a:hover {
 
 /* ---- Idea Cards strip ---- */
 .idea-strip-section {
-  margin: 2rem 0 3rem;
+  margin: 3rem 0 3rem;
+  padding: 2rem 1.5rem;
+  background: var(--bg-2);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.idea-strip-header {
+  margin-bottom: 1.5rem;
+  max-width: 36rem;
 }
 
 .idea-strip-title {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin: 0 0 1rem;
+  margin: 0 0 0.35rem;
   color: var(--text);
 }
 
-.idea-strip-scroll {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-  padding: 0.5rem 0 1.5rem;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+.idea-strip-subtitle {
+  font-size: 1rem;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.5;
 }
 
-.idea-strip-scroll::-webkit-scrollbar {
-  height: 8px;
+.idea-strip-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
 }
 
-.idea-strip-scroll::-webkit-scrollbar-track {
-  background: var(--bg-2);
-  border-radius: 4px;
+@media (min-width: 640px) {
+  .idea-strip-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.idea-strip-scroll::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 4px;
+@media (min-width: 1024px) {
+  .idea-strip-section {
+    padding: 2.5rem 2rem;
+  }
+
+  .idea-strip-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
 }
 
 /* ---- Signup panel ---- */
@@ -672,16 +689,20 @@ a:hover {
   50% { opacity: 0.3; }
 }
 
-/* ---- Idea Card (horizontal strip item) ---- */
+/* ---- Idea Card ---- */
 .idea-card {
   scroll-snap-align: start;
   flex-shrink: 0;
-  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--bg-3);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem 1.5rem;
-  box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  border-radius: var(--radius-sm);
+  padding: 1.5rem 1.25rem;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 0;
+  height: 100%;
 }
 
 .idea-card--snap {
@@ -691,6 +712,7 @@ a:hover {
 .idea-card:hover {
   border-color: var(--border-strong);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .idea-card__tag {
@@ -700,8 +722,8 @@ a:hover {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--primary);
-  margin-bottom: 0.5rem;
-  padding: 0.2rem 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.3rem 0.6rem;
   background: var(--primary-soft);
   border-radius: 6px;
 }

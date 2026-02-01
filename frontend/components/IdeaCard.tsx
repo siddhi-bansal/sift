@@ -11,7 +11,6 @@ export default function IdeaCard({ idea, snap = true }: { idea: IdeaCardData; sn
   return (
     <article
       className={`idea-card ${snap ? "idea-card--snap" : ""}`}
-      style={{ minWidth: "280px", maxWidth: "320px" }}
     >
       {idea.tag && (
         <span className="idea-card__tag">{idea.tag}</span>

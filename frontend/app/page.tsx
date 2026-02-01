@@ -65,7 +65,11 @@ export default function Home() {
           }}
         />
 
-        <IdeaCardStrip ideas={sampleIdeas} title="What shows up in each issue" />
+        <IdeaCardStrip
+          ideas={sampleIdeas}
+          title="What shows up in each issue"
+          subtitle="Themes, startup-grade cards, one bet. Every claim tied to evidence."
+        />
 
         <section id="signup" className="panel" aria-label="Get the digest">
           <div className="card">
