@@ -235,8 +235,9 @@ export function renderIssueEmailHtml(
   const unsubscribeUrl = options.unsubscribeUrl ?? "#";
 
   const titlePlain = stripLeadingHashes(issue.title ?? "");
+  const titleDisplay = titlePlain.replace(/\s*—\s*.+$/, "").trim() || titlePlain;
   const preheader =
-    titlePlain || stripLeadingHashes(issue.themes_line ?? "") || "";
+    titleDisplay || stripLeadingHashes(issue.themes_line ?? "") || "";
   const preheaderHtml = preheader
     ? `<div style="display: none; max-height: 0; overflow: hidden;">${escapeHtml(preheader)}</div>`
     : "";
@@ -249,20 +250,18 @@ export function renderIssueEmailHtml(
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${PURPLE};" bgcolor="${PURPLE}" tpl="header">
   <tr>
     <td style="${CELL_BASE} padding: 14px ${PADDING};">
-      <span style="font-size: 18px; font-weight: 700; color: #000000; letter-spacing: -0.02em;">Sift</span>
+      <span style="font-size: 18px; font-weight: 700; color: #000000; letter-spacing: -0.02em;">Signal, not noise. Build what matters.</span>
     </td>
   </tr>
 </table>`;
 
-  // ---- Title + date (below header, navy; solid hex text) ----
+  // ---- Title (below header, no date); intro optional ----
   const titleDateStyle = `margin: 0 0 4px 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: ${BAND_TITLE};`;
-  const dateStyle = `margin: 0; font-size: 14px; color: ${BAND_BODY};`;
   const titleDateBlock = `
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
   <tr>
     <td style="${CELL_BASE} padding: ${PADDING}; color: ${BAND_BODY};">
-      ${block("h1", titleDateStyle, escapeHtml(titlePlain))}
-      ${issue.date ? `<p style="${dateStyle}">${escapeHtml(issue.date)}</p>` : ""}
+      ${block("h1", titleDateStyle, escapeHtml(titleDisplay))}
       ${issue.intro ? block("p", `margin: 12px 0 0 0; font-size: 15px; line-height: 1.5; color: ${BAND_BODY};`, markdownInlineToHtml(issue.intro)) : ""}
     </td>
   </tr>
@@ -378,7 +377,7 @@ export function renderIssueEmailHtml(
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light dark" />
-  <title>${escapeHtml(titlePlain)}</title>
+  <title>${escapeHtml(titleDisplay)}</title>
   <style type="text/css">
     body, table, td { -webkit-text-size-adjust: 100%; }
     .email-wrapper { width: 100%; }
