@@ -1,6 +1,6 @@
-# Unmet — Pain & Catalyst Newsletter
+# Sift — Signal, not noise. Build what matters.
 
-Daily digest of **pain signals** (complaints, unmet needs, workflows people hate) and **catalyst signals** (industry news that creates urgency or new problems). We ingest from Hacker News, Reddit, and RSS; cluster and summarize with Gemini; and produce a markdown newsletter.
+Daily digest of **pain signals** (complaints, unfulfilled needs, workflows people hate) and **catalyst signals** (industry news that creates urgency or new problems). We ingest from Hacker News, Reddit, and RSS; cluster and summarize with Gemini; and produce a markdown newsletter.
 
 ## Pipeline overview
 
@@ -44,7 +44,7 @@ Interests, subreddits, and RSS feeds are **stored in Supabase** and seeded via a
 
 Newsletter output is **skimmable**, **plain English**, **builder lens**, and **non-hallucinatory**:
 
-- **Intro:** 2–3 lines explaining what Unmet is and that every claim is tied to evidence.
+- **Intro:** 2–3 lines explaining what Sift is and that every claim is tied to evidence.
 - **Pattern language:** A short “Today clusters around: …” line derived from today’s cluster and catalyst themes.
 - **Per-item template (pain cluster, rising, catalyst, wildcard):**
   - **Bold hook** (8–14 words, no “This article…”)
@@ -63,26 +63,26 @@ Newsletter output is **skimmable**, **plain English**, **builder lens**, and **n
 - Banned phrases (e.g. “This highlights”, “This showcases”, “raises questions about”) are enforced; we use direct language instead.
 
 To preview the format without running the full pipeline:  
-`python -m unmet render_sample` — outputs a sample newsletter from fixtures in the new style (no API calls).
+`python -m sift render_sample` — outputs a sample newsletter from fixtures in the new style (no API calls).
 
 ### Scoring, Editor Gate, and Fallbacks
 
-- **Scope config:** `unmet/config.py` defines `NEWSLETTER_AUDIENCE` (B2B builders/devtools founders), `INCLUDED_TOPICS` (devtools, infra, security, data, AI ops, cloud, compliance, SaaS ops, observability, developer productivity, payments infra, platform engineering), and `EXCLUDED_TOPICS` (local human interest, agriculture/food giveaways, sports, celebrity, lifestyle, pure politics unless directly impacts tech compliance/operations). All ranking and selection functions reference this scope.
-- **Scoring:** Each raw item is classified and scored with one Gemini call (`classify_and_score_item`): label (PAIN/DISCUSSION/NEWS/OTHER), confidence, audience_fit, pain_intensity, actionability, evidence_spans (verbatim ≤12-word snippets), exclude_reason. We then compute **UnmetScore** = 0.35×audience_fit + 0.30×pain_intensity + 0.25×actionability + 0.10×confidence − noise_penalty. Noise penalties apply for "Show HN" non-PAIN, generic RSS with no pain evidence, and when exclude_reason is set. Only items with label in {PAIN, DISCUSSION}, audience_fit ≥ 0.65, (pain_intensity ≥ 0.50 or actionability ≥ 0.60), and confidence ≥ 0.55 pass the **candidate filter**. We keep the top N=50 by UnmetScore (configurable via `EDITOR_GATE_TOP_N`).
+- **Scope config:** `backend/sift/config.py` defines `NEWSLETTER_AUDIENCE` (B2B builders/devtools founders), `INCLUDED_TOPICS` (devtools, infra, security, data, AI ops, cloud, compliance, SaaS ops, observability, developer productivity, payments infra, platform engineering), and `EXCLUDED_TOPICS` (local human interest, agriculture/food giveaways, sports, celebrity, lifestyle, pure politics unless directly impacts tech compliance/operations). All ranking and selection functions reference this scope.
+- **Scoring:** Each raw item is classified and scored with one Gemini call (`classify_and_score_item`): label (PAIN/DISCUSSION/NEWS/OTHER), confidence, audience_fit, pain_intensity, actionability, evidence_spans (verbatim ≤12-word snippets), exclude_reason. We then compute **Sift score** = 0.35×audience_fit + 0.30×pain_intensity + 0.25×actionability + 0.10×confidence − noise_penalty. Noise penalties apply for "Show HN" non-PAIN, generic RSS with no pain evidence, and when exclude_reason is set. Only items with label in {PAIN, DISCUSSION}, audience_fit ≥ 0.65, (pain_intensity ≥ 0.50 or actionability ≥ 0.60), and confidence ≥ 0.55 pass the **candidate filter**. We keep the top N=50 by score (configurable via `EDITOR_GATE_TOP_N`).
 - **Editor Gate:** One Gemini call per day selects which candidates make it into the newsletter: **featured_pain_ids**, **secondary_pain_ids**, **catalyst_ids**, and **rejects** (with reason: off-scope, weak evidence, not actionable, duplicate). Only items in featured + secondary pain ids are clustered and summarized; catalysts are gated separately. Rejects are logged (e.g. "Reject id=… reason=off-scope").
 - **Catalyst gating:** Catalysts must fit B2B/devtools; excluded topics (e.g. food giveaways, sports) are not included unless they directly impact tech compliance/operations. Each catalyst has a narrow buyer and specific problems; opportunity_wedge follows "Start with &lt;buyer&gt; who &lt;situation&gt;, build &lt;first feature&gt;" or "Unclear from evidence." We allow 0 catalysts if none pass.
 - **Editorial fallbacks:** If after filtering and editor gate there are &lt;2 good pain clusters, we publish **1 deep pain** (first cluster) plus **Watchlist themes** (2 short bullets from other clusters/themes) and skip the full "Rising" section. If no catalysts pass gating, we show **"No catalysts worth your attention today."** If clustering yields &lt;2 clusters, we skip the "Rising" section entirely (no "No clear risers today" boilerplate). We prefer shipping fewer, higher-quality items over filler.
 - **Evidence:** HN items get top comments fetched and stored in metadata (with post_id, comment_id, author, created_at, text, and derived permalinks: post_url, comment_url); pain candidates get 2–4 **evidence_snippets** (pain-language extraction) saved to `raw_items.evidence_snippets`. Summaries and idea-card prompts use structured **evidence_bullets** (quote + post link + comment link); every claim must be supported by evidence; when evidence is thin or post-only we output "Unclear from evidence" and auto-lower confidence.
-- **Embedding resilience:** Embedding runs in a subprocess (`python -m unmet.embed_worker input.json output.json`) so a segfault does not crash the main run. On failure we retry with smaller batch sizes (50 → 16 → 4). If embedding still fails, we fall back to TF-IDF for clustering and log clearly.
+- **Embedding resilience:** Embedding runs in a subprocess (`python -m sift.embed_worker input.json output.json`) so a segfault does not crash the main run. On failure we retry with smaller batch sizes (50 → 16 → 4). If embedding still fails, we fall back to TF-IDF for clustering and log clearly.
 
 ---
 
 ## Repo layout
 
 ```
-unmet/
+sift/                  # Sift repo
 ├── backend/          # Python 3.11 pipeline + CLI
-│   ├── unmet/        # Package: ingest, analyze, run, db, gemini_client, newsletter_style, fixtures
+│   ├── sift/         # Package: ingest, analyze, run, db, gemini_client, newsletter_style, fixtures
 │   └── pyproject.toml
 ├── frontend/         # Next.js 14 (App Router) landing + signup + preview
 ├── supabase/
@@ -108,7 +108,7 @@ unmet/
 
 5. Seed interests and sources:
    - **Option A:** Run the backend seed (recommended):  
-     `cd backend && pip install -e . && python -m unmet seed`
+     `cd backend && pip install -e . && python -m sift seed`
    - **Option B:** In SQL Editor, run `supabase/seed.sql` after the schema.
 
 ---
@@ -179,28 +179,28 @@ Ensure `.env` (or `backend/.env`) has `SUPABASE_DB_URL` and `GEMINI_API_KEY`.
 **Ingest** (HN + Reddit + RSS → `raw_items`):
 
 ```bash
-python -m unmet ingest --date 2026-01-26
+python -m sift ingest --date 2026-01-26
 ```
 
 **Analyze** (pain score, Gemini labels, clustering → `item_labels`, `clusters`, `cluster_items`):
 
 ```bash
-python -m unmet analyze --date 2026-01-26
+python -m sift analyze --date 2026-01-26
 ```
 
 **Run** (summarize clusters, catalyst bullets, build report → `daily_reports`, `catalyst_items`, `/out/YYYY-MM-DD.md`):
 
 ```bash
-python -m unmet run --date 2026-01-26
+python -m sift run --date 2026-01-26
 ```
 
 **Full pipeline for “today”:**
 
 ```bash
 export TODAY=$(date +%Y-%m-%d)
-python -m unmet ingest --date $TODAY
-python -m unmet analyze --date $TODAY
-python -m unmet run --date $TODAY
+python -m sift ingest --date $TODAY
+python -m sift analyze --date $TODAY
+python -m sift run --date $TODAY
 ```
 
 Then open `/preview?date=$TODAY` or read `out/$TODAY.md`.
@@ -208,13 +208,13 @@ Then open `/preview?date=$TODAY` or read `out/$TODAY.md`.
 **Seed** (interests + interest_sources):
 
 ```bash
-python -m unmet seed
+python -m sift seed
 ```
 
 **Render sample** (sample newsletter in the new style, no API):
 
 ```bash
-python -m unmet render_sample
+python -m sift render_sample
 ```
 
 ---
@@ -222,13 +222,13 @@ python -m unmet render_sample
 ## 5. Generate today’s newsletter and preview it
 
 1. Set env (backend and frontend as above).
-2. Apply migrations and seed (Supabase + `python -m unmet seed`).
+2. Apply migrations and seed (Supabase + `python -m sift seed`).
 3. Run pipeline for today:
    ```bash
    cd backend
-   python -m unmet ingest --date $(date +%Y-%m-%d)
-   python -m unmet analyze --date $(date +%Y-%m-%d)
-   python -m unmet run --date $(date +%Y-%m-%d)
+   python -m sift ingest --date $(date +%Y-%m-%d)
+   python -m sift analyze --date $(date +%Y-%m-%d)
+   python -m sift run --date $(date +%Y-%m-%d)
    ```
 4. Start frontend and open `/preview?date=<today>`.
 5. Or open `out/<today>.md` in the repo.
@@ -240,7 +240,7 @@ python -m unmet render_sample
 **Cron** (run at a fixed time every day, e.g. 6:00 UTC):
 
 ```cron
-0 6 * * * cd /path/to/unmet/backend && . .venv/bin/activate && export $(grep -v '^#' .env | xargs) && python -m unmet ingest --date $(date +\%Y-\%m-\%d) && python -m unmet analyze --date $(date +\%Y-\%m-\%d) && python -m unmet run --date $(date +\%Y-\%m-\%d)
+0 6 * * * cd /path/to/sift/backend && . .venv/bin/activate && export $(grep -v '^#' .env | xargs) && python -m sift ingest --date $(date +\%Y-\%m-\%d) && python -m sift analyze --date $(date +\%Y-\%m-\%d) && python -m sift run --date $(date +\%Y-\%m-\%d)
 ```
 
 **GitHub Actions** (example workflow that runs at 6:00 UTC):
@@ -269,21 +269,36 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          REDDIT_USER_AGENT: UnmetNewsletter/1.0
+          REDDIT_USER_AGENT: SiftNewsletter/1.0
         run: |
           TODAY=$(date +%Y-%m-%d)
-          cd backend && python -m unmet ingest --date $TODAY
-          cd backend && python -m unmet analyze --date $TODAY
-          cd backend && python -m unmet run --date $TODAY
+          cd backend && python -m sift ingest --date $TODAY
+          cd backend && python -m sift analyze --date $TODAY
+          cd backend && python -m sift run --date $TODAY
 ```
 
 Add the same env vars as repo **Secrets**. For Reddit, use either `APIFY_API_TOKEN` (Apify) or `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` (PRAW). Adjust paths if your workflow runs from repo root.
 
 ---
 
+## Testing
+
+**Backend**
+
+- **CLI (no DB/API):** `cd backend && python -m sift render_sample` — should print Sift markdown.
+- **Tests without pytest:** `cd backend && python run_tests.py` — runs scoring and newsletter_style checks (no pytest plugin load).
+- **Full test suite:** `cd backend && pip install -e ".[dev]" && pytest tests/ -v`  
+  If you see `ImportError: get_ref_type from omegaconf` (or similar), your system Python has a conflicting Hydra/omegaconf. Use a clean venv: `python -m venv .venv && source .venv/bin/activate` (or `.venv\Scripts\activate` on Windows), then `pip install -e ".[dev]" && pytest tests/`.
+
+**Frontend**
+
+- `cd frontend && npm test -- --run` — runs email render tests.
+
+---
+
 ## Logging, retries, rate limits
 
-- **Logging:** Python pipeline uses `logging`; level and format are set in `unmet/cli.py`.
+- **Logging:** Python pipeline uses `logging`; level and format are set in `backend/sift/cli.py`.
 - **Retries:** Gemini `generate_text` uses a small retry loop with backoff on 429 / resource_exhausted.
 - **Rate limits:** Ingest uses conservative defaults (e.g. HN/Reddit/RSS limits via env). Gemini embed calls use short sleeps between requests when batching.
 

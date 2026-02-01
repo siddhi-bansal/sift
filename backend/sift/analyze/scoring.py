@@ -1,4 +1,4 @@
-"""Deterministic filtering and ranking: UnmetScore, noise_penalty, candidate filter, top N."""
+"""Deterministic filtering and ranking: Sift score, noise_penalty, candidate filter, top N."""
 from __future__ import annotations
 
 import logging
@@ -8,7 +8,7 @@ from ..config import EDITOR_GATE_TOP_N
 
 logger = logging.getLogger(__name__)
 
-# Weights for unmet_score
+# Weights for sift_score
 AUDIENCE_FIT_WEIGHT = 0.35
 PAIN_INTENSITY_WEIGHT = 0.30
 ACTIONABILITY_WEIGHT = 0.25
@@ -52,7 +52,7 @@ def _evidence_indicates_pain(evidence_spans: list[str]) -> bool:
     return any(w in text for w in pain_words)
 
 
-def unmet_score(
+def sift_score(
     audience_fit: float,
     pain_intensity: float,
     actionability: float,
@@ -60,7 +60,7 @@ def unmet_score(
     noise_penalty_val: float,
 ) -> float:
     """
-    unmet_score = 0.35*audience_fit + 0.30*pain_intensity + 0.25*actionability + 0.10*confidence - noise_penalty
+    sift_score = 0.35*audience_fit + 0.30*pain_intensity + 0.25*actionability + 0.10*confidence - noise_penalty
     """
     raw = (
         AUDIENCE_FIT_WEIGHT * max(0, min(1, audience_fit))
@@ -110,7 +110,7 @@ def filter_and_rank_candidates(
     top_n: int | None = None,
 ) -> list[dict[str, Any]]:
     """
-    For each item, compute unmet_score; keep only candidates passing filter; sort by score desc; return top N.
+    For each item, compute sift_score; keep only candidates passing filter; sort by score desc; return top N.
     Each item must have id, title, url, source. labels_map: raw_item_id -> {label, confidence, audience_fit, pain_intensity, actionability, evidence_spans, exclude_reason}.
     """
     top_n = top_n if top_n is not None else EDITOR_GATE_TOP_N
@@ -134,7 +134,7 @@ def filter_and_rank_candidates(
         item_with_reason = dict(r)
         item_with_reason["exclude_reason"] = exclude_reason
         np_val = noise_penalty(item_with_reason, label, r.get("source") or "", evidence_spans)
-        score = unmet_score(af, pi, ac, conf, np_val)
-        scored.append((score, {**r, "unmet_score": score, "label": label, **lab}))
+        score = sift_score(af, pi, ac, conf, np_val)
+        scored.append((score, {**r, "sift_score": score, "label": label, **lab}))
     scored.sort(key=lambda x: -x[0])
     return [x[1] for x in scored[:top_n]]

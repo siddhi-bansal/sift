@@ -1,6 +1,6 @@
 "use client";
 
-import Mascot from "./Mascot";
+import SignalDetector from "./SignalDetector";
 
 type Props = {
   title: string;
@@ -11,8 +11,8 @@ type Props = {
 export default function EmptyState({ title, description, action }: Props) {
   return (
     <div className="empty-state">
-      <div className="empty-state__mascot">
-        <Mascot size={140} animated />
+      <div className="empty-state__mark">
+        <SignalDetector size={80} />
       </div>
       <h2 className="empty-state__title">{title}</h2>
       {description && <p className="empty-state__desc">{description}</p>}

@@ -3,9 +3,9 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "unmet"
+name = "sift"
 version = "0.1.0"
-description = "Unmet newsletter pipeline"
+description = "Sift newsletter pipeline"
 requires-python = ">=3.11"
 dependencies = [
     "psycopg[binary]>=3.1",
@@ -24,7 +24,7 @@ dev = ["pytest", "ruff"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["unmet*"]
+include = ["sift*"]
 
 [tool.ruff]
 line-length = 100

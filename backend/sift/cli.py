@@ -24,7 +24,7 @@ def _date(s: str) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="unmet", description="Unmet newsletter pipeline")
+    parser = argparse.ArgumentParser(prog="sift", description="Sift newsletter pipeline (python -m sift)")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_ingest = sub.add_parser("ingest", help="Ingest HN, Reddit, RSS for a date")

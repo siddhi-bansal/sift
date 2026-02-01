@@ -31,7 +31,7 @@ Skimmable: bold hook line + bullets + consistent structure.
 Implement these changes end-to-end:
 
 1) Add a short intro at the top (2–3 lines max)
-- Explain what Unmet is and that claims are evidence-based.
+- Explain what Sift is and that claims are evidence-based.
 
 2) Enforce a strict template for EVERY item (pain cluster, rising, catalyst, wildcard)
 
@@ -93,7 +93,7 @@ Hard caps:
 
 9) Make it testable + fast to iterate
 - Add fixtures (sample clusters + sample news items + sample raw evidence).
-- Add `python -m unmet render_sample` to output a sample newsletter in the new style.
+- Add `python -m sift render_sample` to output a sample Sift newsletter in the new style.
 - Update README describing the new format + grounding rules.
 
 Deliverables:

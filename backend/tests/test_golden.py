@@ -1,6 +1,6 @@
 """Golden snapshot test: synthetic daily run has no banned phrases and no duplicate URLs."""
-from unmet.newsletter_style import BANNED_PHRASES, get_intro
-from unmet.run.render_sample import run_render_sample
+from sift.newsletter_style import BANNED_PHRASES, get_intro
+from sift.run.render_sample import run_render_sample
 
 
 def test_golden_no_banned_phrases():

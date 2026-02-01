@@ -38,7 +38,7 @@ GEMINI_TEXT_MODEL = _str("GEMINI_TEXT_MODEL") or "gemini-2.0-flash"
 # Reddit: PRAW (official API, needs approval) or Apify (no Reddit approval)
 REDDIT_CLIENT_ID = _str("REDDIT_CLIENT_ID")
 REDDIT_CLIENT_SECRET = _str("REDDIT_CLIENT_SECRET")
-REDDIT_USER_AGENT = _str("REDDIT_USER_AGENT") or "UnmetNewsletter/1.0"
+REDDIT_USER_AGENT = _str("REDDIT_USER_AGENT") or "SiftNewsletter/1.0"
 APIFY_API_TOKEN = _str("APIFY_API_TOKEN")
 APIFY_REDDIT_ACTOR = _str("APIFY_REDDIT_ACTOR") or "trudax/reddit-scraper"
 
@@ -78,5 +78,5 @@ EXCLUDED_TOPICS = [
     "pure politics",
 ]  # unless directly impacts tech compliance/operations
 
-# Pre-cluster: top N candidates by unmet_score (configurable)
+# Pre-cluster: top N candidates by sift_score (configurable)
 EDITOR_GATE_TOP_N = _int("EDITOR_GATE_TOP_N", 50)

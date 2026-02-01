@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Issue } from "@/lib/email/types";
 import { renderIssueEmailHtml } from "@/lib/email/renderIssueEmailHtml";
 import MascotLoading from "@/components/MascotLoading";
+import SignalDetector from "@/components/SignalDetector";
 
 type Viewport = "desktop" | "mobile";
 
@@ -58,7 +59,7 @@ export default function EmailPreviewPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `unmet-${issue.date}.html`;
+    a.download = `sift-${issue.date}.html`;
     a.click();
     URL.revokeObjectURL(url);
   }, [html, issue]);
@@ -67,16 +68,16 @@ export default function EmailPreviewPage() {
     <>
       <header className="nav-bar" role="banner">
         <div className="nav-bar__inner">
-          <Link href="/" className="brand" aria-label="Unmet home">
-            <img src="/unmet-logo.png" alt="" className="logo" />
+          <Link href="/" className="brand" aria-label="Sift home">
+            <SignalDetector size={40} className="nav-bar__mark" />
             <div>
-              <span className="masthead-title">Unmet</span>
-              <p className="masthead-tagline">Email preview</p>
+              <span className="masthead-title">Sift</span>
+              <p className="masthead-tagline">Signal, not noise. Build what matters.</p>
             </div>
           </Link>
           <nav className="toplinks" aria-label="Main navigation">
-            <Link href="/preview">Preview</Link>
-            <Link href="/">Home</Link>
+            <Link href="/preview" className="toplinks__link toplinks__link--active">Preview</Link>
+            <Link href="/" className="toplinks__link">Home</Link>
           </nav>
         </div>
       </header>

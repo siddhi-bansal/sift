@@ -1,5 +1,5 @@
 """Unit tests for evidence-topic coherence: validate_topic_coherence, mismatch fails."""
-from unmet.analyze.topic_coherence import validate_topic_coherence
+from sift.analyze.topic_coherence import validate_topic_coherence
 
 
 def test_validate_topic_coherence_pass_two_snippet_hits():

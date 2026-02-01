@@ -6,7 +6,7 @@ from pathlib import Path
 
 # run from backend/
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from unmet import db
+from sift import db
 
 def main():
     date_str = sys.argv[1] if len(sys.argv) > 1 else "2026-01-31"

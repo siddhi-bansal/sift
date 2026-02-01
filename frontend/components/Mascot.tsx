@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Unmet mascot: a curious, pattern-finding character.
+ * Legacy mascot (Sift uses SiftMark). Kept for reference.
  * Friendly blob with a magnifying glass — spotting signals and pain points.
  * Used sparingly (hero, loading, empty state).
  */

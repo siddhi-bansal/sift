@@ -90,7 +90,7 @@ def run_analyze(target_date: str | None = None) -> None:
 
     # 2) Filter + rank to top N candidates
     candidates = filter_and_rank_candidates(items, labels_map)
-    logger.info("Filter: %d items -> %d candidates (top N by unmet_score)", len(items), len(candidates))
+    logger.info("Filter: %d items -> %d candidates (top N by sift_score)", len(items), len(candidates))
 
     if not candidates:
         logger.warning("No candidates passed filter for %s", d)

@@ -5,7 +5,8 @@
 
 import type { Issue, StartupGradeCard, WedgeBlock } from "./types";
 
-const INTRO_PREFIX = "Unmet scans HN";
+const INTRO_PREFIX = "Sift scans";
+const INTRO_PREFIX_LEGACY = "Unmet scans";
 const THEMES_PREFIX = "Today's themes:";
 const SECTION_STARTUP = "## Startup-Grade Idea Cards";
 const SECTION_DRAFT = "## Draft / Needs more receipts";
@@ -150,13 +151,19 @@ export function parseIssueFromMarkdown(markdown: string): Issue | null {
   while (i < lines.length) {
     const line = lines[i];
     const t = line.trim();
-    if (line.startsWith("# Unmet — ")) {
-      date = line.replace("# Unmet — ", "").trim();
-      title = `Unmet — ${date}`;
+    if (line.startsWith("# Sift — ")) {
+      date = line.replace("# Sift — ", "").trim();
+      title = `Sift — ${date}`;
       i++;
       continue;
     }
-    if (intro === "" && t.includes(INTRO_PREFIX)) {
+    if (line.startsWith("# Unmet — ")) {
+      date = line.replace("# Unmet — ", "").trim();
+      title = `Sift — ${date}`;
+      i++;
+      continue;
+    }
+    if (intro === "" && (t.includes(INTRO_PREFIX) || t.includes(INTRO_PREFIX_LEGACY))) {
       intro = t;
       i++;
       continue;

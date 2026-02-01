@@ -1,5 +1,5 @@
 """Unit tests for wedge format enforcement."""
-from unmet.newsletter_style import (
+from sift.newsletter_style import (
     BANNED_PHRASES,
     NewsletterItem,
     validate_item,

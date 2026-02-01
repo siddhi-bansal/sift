@@ -64,7 +64,7 @@ def classify_pain_label(text: str, title: str = "") -> tuple[str, float]:
     """
     combined = f"Title: {title}\n\nBody: {text[:8000]}"
     prompt = f"""Classify this post/article into exactly one label: PAIN, DISCUSSION, NEWS, or OTHER.
-- PAIN: complaints, requests for help, "I wish", "why can't", workflows people hate, unmet needs, frustration.
+- PAIN: complaints, requests for help, "I wish", "why can't", workflows people hate, unfulfilled needs, frustration.
 - DISCUSSION: question/discussion that could reveal pain or needs but is more exploratory.
 - NEWS: factual news, product launch, announcement (not a complaint).
 - OTHER: off-topic or none of the above.
@@ -327,7 +327,7 @@ def embed_batch_with_retry(
                         output_path = fout.name
                     try:
                         proc = subprocess.run(
-                            [str(Path(sys.executable).resolve()), "-m", "unmet.embed_worker", input_path, output_path],
+                            [str(Path(sys.executable).resolve()), "-m", "sift.embed_worker", input_path, output_path],
                             capture_output=True,
                             timeout=60 * (len(chunk) // 10 + 1),
                             cwd=str(Path(__file__).resolve().parent.parent),
@@ -511,7 +511,7 @@ def summarize_cluster(
     snippets = "\n".join(item_snippets[:15])[:12000]
     prompt = f"""You may make bounded inferences that logically follow from the evidence, as long as they are marked with tentative language ('suggests', 'likely means', 'points to', 'one plausible read') and grounded in the provided snippets. Do NOT invent new facts. Only use 'Insufficient evidence' if no reasonable inference about buyer or problem shape can be made.
 
-You are writing a newsletter section for "pain signals" – real complaints and unmet needs from the web.
+You are writing a newsletter section for "pain signals" – real complaints and unfulfilled needs from the web.
 Every claim must be grounded in the snippets below. Do not invent details.
 
 Bad: "Unclear from evidence."
@@ -814,7 +814,7 @@ def compose_startup_grade_cards(
         ]
     )
 
-    prompt = f"""You are an analyst writing for Unmet. You are given a set of Hacker News posts and deep comment threads (many comments per post). Your job is NOT to summarize. Your job is to extract startup-grade, buildable problems with paying buyers.
+    prompt = f"""You are an analyst writing for Sift. You are given a set of Hacker News posts and deep comment threads (many comments per post). Your job is NOT to summarize. Your job is to extract startup-grade, buildable problems with paying buyers.
 
 HARD RULES:
 1) Comments are the primary signal. Use posts only for context.

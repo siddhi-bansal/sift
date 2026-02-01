@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Unmet — Pain & catalyst signals for builders",
-  description: "Daily digest of pain signals and industry catalysts. Sign up, pick your interests.",
+  title: "Sift — Signal, not noise. Build what matters.",
+  description: "Sift scans developer conversations and tech news, then distills real, repeated problems into clear, evidence-backed signals and buildable opportunities. For founders and developers.",
 };
 
 export default function RootLayout({

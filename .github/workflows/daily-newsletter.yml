@@ -19,10 +19,10 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          REDDIT_USER_AGENT: UnmetNewsletter/1.0
+          REDDIT_USER_AGENT: SiftNewsletter/1.0
         run: |
           TODAY=$(date +%Y-%m-%d)
           cd backend
-          python -m unmet ingest --date "$TODAY"
-          python -m unmet analyze --date "$TODAY"
-          python -m unmet run --date "$TODAY"
+          python -m sift ingest --date "$TODAY"
+          python -m sift analyze --date "$TODAY"
+          python -m sift run --date "$TODAY"

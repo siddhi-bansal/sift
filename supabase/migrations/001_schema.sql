@@ -1,4 +1,4 @@
--- Unmet newsletter schema
+-- Sift newsletter schema
 -- Run order: 001_schema.sql, then seed via backend script or 002_seed.sql
 
 -- Interests (topics users can subscribe to)

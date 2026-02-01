@@ -1,13 +1,13 @@
 import type { IdeaCardData } from "@/components/IdeaCard";
 
 /**
- * What actually shows up in each Unmet issue (matches backend report structure).
+ * What actually shows up in each Sift issue (matches backend report structure).
  */
 export const sampleIdeas: IdeaCardData[] = [
   {
     id: "1",
     title: "Today's themes",
-    summary: "One line of pain themes from the day.",
+    summary: "One line of recurring pain themes from the day.",
     tag: "Themes",
   },
   {

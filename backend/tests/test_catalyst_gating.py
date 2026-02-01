@@ -2,13 +2,13 @@
 from unittest.mock import patch
 import json
 
-from unmet.gemini_client import catalyst_bullets
-from unmet.config import EXCLUDED_TOPICS, NEWSLETTER_AUDIENCE
+from sift.gemini_client import catalyst_bullets
+from sift.config import EXCLUDED_TOPICS, NEWSLETTER_AUDIENCE
 
 
 def test_catalyst_bullets_prompt_includes_excluded_topics():
     """Catalyst prompt must reference excluded topics so model gates them."""
-    with patch("unmet.gemini_client.generate_text") as mock:
+    with patch("sift.gemini_client.generate_text") as mock:
         mock.return_value = "[]"
         catalyst_bullets([{"title": "News", "url": "https://x", "text": "Body"}], max_bullets=1)
     call_args = mock.call_args[0][0]
@@ -35,7 +35,7 @@ def test_catalyst_bullets_returns_opportunity_wedge():
         "confidence": 0.8,
         "source_urls": ["https://example.com"],
     }]
-    with patch("unmet.gemini_client.generate_text", return_value=json.dumps(raw)):
+    with patch("sift.gemini_client.generate_text", return_value=json.dumps(raw)):
         out = catalyst_bullets([{"title": "T", "url": "https://u", "text": "B"}], max_bullets=1)
     assert len(out) == 1
     assert "wedge" in out[0] or "opportunity_wedge" in str(out[0])

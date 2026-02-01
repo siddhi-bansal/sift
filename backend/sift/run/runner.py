@@ -339,7 +339,7 @@ def run_report(target_date: str | None = None) -> str:
             logger.info("buildability_pass card idx=%s title=%s", i, (card.get("title") or "")[:50])
 
     # 7) Report: Header, themes, cards (or Draft section if <2 cards), One bet, Rejects
-    lines = [f"# Unmet — {d}", "", get_intro(), "", ""]
+    lines = [f"# Sift — {d}", "", get_intro(), "", ""]
     themes_line = get_todays_themes_from_startup_cards(idea_cards, top_n=3)
     if themes_line:
         lines.append(themes_line)

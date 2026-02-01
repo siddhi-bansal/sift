@@ -1,9 +1,9 @@
-"""Unit tests for filter thresholds and unmet_score behavior."""
-from unmet.analyze.scoring import (
+"""Unit tests for filter thresholds and Sift score behavior."""
+from sift.analyze.scoring import (
+    filter_and_rank_candidates,
     noise_penalty,
     passes_candidate_filter,
-    unmet_score,
-    filter_and_rank_candidates,
+    sift_score,
 )
 
 
@@ -39,8 +39,8 @@ def test_noise_penalty_exclude_reason():
     assert p >= 0.20
 
 
-def test_unmet_score_formula():
-    s = unmet_score(0.4, 0.5, 0.6, 0.7, 0.0)
+def test_sift_score_formula():
+    s = sift_score(0.4, 0.5, 0.6, 0.7, 0.0)
     expected = 0.35 * 0.4 + 0.30 * 0.5 + 0.25 * 0.6 + 0.10 * 0.7
     assert abs(s - expected) < 0.001
 

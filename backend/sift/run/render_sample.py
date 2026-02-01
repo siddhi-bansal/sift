@@ -39,7 +39,7 @@ def run_render_sample(fixture_path: Path | None = None) -> str:
     wildcard = data.get("wildcard")
 
     bet_candidates: list[tuple[Any, float]] = []
-    lines = [f"# Unmet — {d}", "", get_intro(), "", ""]
+    lines = [f"# Sift — {d}", "", get_intro(), "", ""]
 
     cluster_titles = [c.get("title") or "" for c in clusters[:5]]
     catalyst_titles = [cat.get("title") or "" for cat in catalysts[:5]]

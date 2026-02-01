@@ -5,7 +5,7 @@ import re
 from typing import Any
 
 
-# Phrases that suggest pain / unmet need
+# Phrases that suggest pain / unfulfilled need
 PAIN_PHRASES = [
     r"\bi wish\b", r"\bwhy can'?t\b", r"\bhow do i\b", r"\bdoes anyone else\b",
     r"\bhate (that|when|how)\b", r"\bfrustrat(e|ed|ing)\b", r"\bannoy(e|ing|ed)\b",

@@ -1,6 +1,6 @@
 "use client";
 
-import Mascot from "./Mascot";
+import SiftMascot from "./SiftMascot";
 
 type SignupProps = {
   email: string;
@@ -18,13 +18,13 @@ export default function Hero({
   return (
     <section className="hero-section" aria-label="Welcome">
       <div className="hero-content">
-        <p className="hero-kicker">For builders & founders</p>
+        <p className="hero-kicker">For founders & developers</p>
         <h1 className="hero-headline">
-          <span className="hero-headline__line">Real problems.</span>
-          <span className="hero-headline__line">Real opportunities.</span>
+          <span className="hero-headline__line">Signal, not noise.</span>
+          <span className="hero-headline__line">Build what matters.</span>
         </h1>
         <p className="hero-lede">
-          Daily pain signals and industry catalysts from Hacker News, Reddit, and tech — so you spot what to build next.
+        Sift scans developer conversations and tech news to filter noise and surface repeated, evidence-backed signals — so you can focus on building what matters.
         </p>
       </div>
       <div className="hero-cta-wrap">
@@ -64,9 +64,9 @@ export default function Hero({
           </div>
         )}
       </div>
-      <div className="hero-mascot-wrap">
-        <div className="hero-mascot" aria-hidden>
-          <Mascot size={240} animated />
+      <div className="hero-mark-wrap">
+        <div className="hero-mark" aria-hidden>
+          <SiftMascot size={200} />
         </div>
       </div>
     </section>

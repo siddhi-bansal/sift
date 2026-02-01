@@ -298,8 +298,8 @@ def format_item(item: NewsletterItem, section_kind: str) -> str:
 
 
 def get_intro() -> str:
-    """Short intro (2–3 lines): what Unmet is and that claims are evidence-based."""
-    return """Unmet scans HN, Reddit, and RSS for pain signals and catalyst news, then clusters and summarizes them. Every claim below is tied to evidence—snippets and links—with no invented names, numbers, or causal leaps. When we're unsure, we say so."""
+    """Short intro (2–3 lines): what Sift is and that claims are evidence-based."""
+    return """Sift scans Hacker News, Reddit, and RSS for developer conversations and tech news, then distills real, repeated problems into evidence-backed signals. Every claim below is tied to evidence—snippets and links—with no invented names, numbers, or causal leaps. When we're unsure, we say so."""
 
 
 def get_pattern_language(cluster_titles: list[str], catalyst_titles: list[str], max_lines: int = 2) -> str:

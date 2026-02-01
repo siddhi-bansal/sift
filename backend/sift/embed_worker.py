@@ -1,5 +1,5 @@
 """Subprocess worker for embedding: reads texts from JSON file, writes embeddings to JSON file.
-Run: python -m unmet.embed_worker input.json output.json
+Run: python -m sift.embed_worker input.json output.json
 Isolates segfaults from the main process."""
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: python -m unmet.embed_worker input.json output.json", file=sys.stderr)
+        print("Usage: python -m sift.embed_worker input.json output.json", file=sys.stderr)
         return 1
     input_path = sys.argv[1]
     output_path = sys.argv[2]

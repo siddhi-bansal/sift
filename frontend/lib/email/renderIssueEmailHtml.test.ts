@@ -11,8 +11,8 @@ import { renderIssueEmailHtml } from "./renderIssueEmailHtml";
 function minimalIssue(overrides: Partial<Issue> = {}): Issue {
   return {
     date: "2026-01-31",
-    title: "Unmet — 2026-01-31",
-    intro: "Unmet scans HN, Reddit, and RSS for pain signals.",
+    title: "Sift — 2026-01-31",
+    intro: "Sift scans developer conversations and tech news, then distills real, repeated problems into evidence-backed signals.",
     themes_line: "Today's themes: X, Y.",
     section_title: "## Startup-Grade Idea Cards",
     cards: [

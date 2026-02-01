@@ -1,5 +1,5 @@
 """Tests for startup-grade card schema and validation."""
-from unmet.newsletter_style import (
+from sift.newsletter_style import (
     validate_startup_grade_card,
     validate_startup_grade_card_split,
     STARTUP_GRADE_BANNED_PHRASES,
@@ -95,7 +95,7 @@ def test_validate_startup_grade_card_accepts_evidence_objects():
 
 def test_evidence_comment_permalink_ratio_at_least_70_percent():
     """Sanity check: when generating cards, at least 70% of evidence bullets should include a comment permalink; ratio helper is used for auto-downgrade."""
-    from unmet.gemini_client import _evidence_comment_permalink_ratio, EVIDENCE_COMMENT_PERMALINK_MIN_RATIO
+    from sift.gemini_client import _evidence_comment_permalink_ratio, EVIDENCE_COMMENT_PERMALINK_MIN_RATIO
 
     # 3/4 = 75% with comment_url -> above threshold
     evidence_ok = [

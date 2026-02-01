@@ -6,6 +6,8 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/lib/supabase";
 import MascotLoading from "@/components/MascotLoading";
+import SignalDetector from "@/components/SignalDetector";
+import DatePicker from "@/components/DatePicker";
 
 function PreviewInner() {
   const searchParams = useSearchParams();
@@ -51,15 +53,16 @@ function PreviewInner() {
     <>
       <header className="nav-bar" role="banner">
         <div className="nav-bar__inner">
-          <a href="/" className="brand" aria-label="Unmet home">
-            <img src="/unmet-logo.png" alt="" className="logo" />
+          <a href="/" className="brand" aria-label="Sift home">
+            <SignalDetector size={40} className="nav-bar__mark" />
             <div>
-              <span className="masthead-title">Unmet</span>
-              <p className="masthead-tagline">Report preview</p>
+              <span className="masthead-title">Sift</span>
+              <p className="masthead-tagline">Signal, not noise. Build what matters.</p>
             </div>
           </a>
           <nav className="toplinks" aria-label="Main navigation">
-            <a href="/">Home</a>
+            <a href="/preview" className="toplinks__link toplinks__link--active">Preview</a>
+            <a href="/" className="toplinks__link">Home</a>
           </nav>
         </div>
       </header>
@@ -71,13 +74,8 @@ function PreviewInner() {
         <div className="card" style={{ marginBottom: "1.5rem" }}>
           <div className="preview-date" style={{ marginBottom: 0 }}>
             <label htmlFor="date">Date</label>
-            <input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <button type="button" className="btn btn-primary" onClick={go} style={{ marginLeft: "0.5rem" }}>
+            <DatePicker id="date" value={date} onChange={setDate} />
+            <button type="button" className="btn btn-primary" onClick={go}>
               Load
             </button>
           </div>
@@ -113,7 +111,7 @@ export default function PreviewPage() {
         <>
           <header className="nav-bar" role="banner">
             <div className="nav-bar__inner">
-              <span className="masthead-title">Unmet</span>
+              <span className="masthead-title">Sift</span>
             </div>
           </header>
           <main className="container">

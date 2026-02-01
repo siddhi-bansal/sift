@@ -34,7 +34,7 @@ def fetch_reddit_posts(
         reddit = praw.Reddit(
             client_id=REDDIT_CLIENT_ID,
             client_secret=REDDIT_CLIENT_SECRET,
-            user_agent=REDDIT_USER_AGENT or "UnmetNewsletter/1.0",
+            user_agent=REDDIT_USER_AGENT or "SiftNewsletter/1.0",
         )
         for sub_name in subreddits:
             try:
