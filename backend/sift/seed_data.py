@@ -1,4 +1,4 @@
-"""Seed interests and interest_sources from DB-editable data."""
+"""Seed interests and interest_sources (sources for ingest). No per-subscriber interests."""
 from __future__ import annotations
 
 import logging

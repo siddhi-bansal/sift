@@ -45,14 +45,6 @@ def execute_many(
             cur.executemany(sql, params_list or [])
 
 
-def fetch_interests() -> list[dict[str, Any]]:
-    """Return all interests from DB."""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id, name, description FROM interests ORDER BY name")
-        return list(cur.fetchall())
-
-
 def fetch_interest_sources() -> list[dict[str, Any]]:
     """Return all interest_sources with interest name for convenience."""
     with get_conn() as conn:
@@ -68,42 +60,21 @@ def fetch_interest_sources() -> list[dict[str, Any]]:
         return list(cur.fetchall())
 
 
-def get_sources_for_ingest(
-    subscriber_interest_counts: dict[str, int] | None,
-) -> tuple[list[str], list[str]]:
+def get_sources_for_ingest() -> tuple[list[str], list[str]]:
     """
-    Return (subreddits, rss_urls) to ingest.
-    If subscriber_interest_counts is None or empty, use 'General' interest only.
-    Otherwise weight sources by how many subscribers have each interest.
+    Return (subreddits, rss_urls) to ingest from interest_sources.
+    Uses all sources with their weight (no subscriber-based weighting).
     """
     sources = fetch_interest_sources()
     if not sources:
         return ([], [])
 
-    # Build interest_id -> name and name -> weight from subscribers
-    interest_weights: dict[str, float] = {}
-    if subscriber_interest_counts:
-        for name, count in subscriber_interest_counts.items():
-            interest_weights[name] = float(count)
-    else:
-        # Fallback: General only (by name)
-        general = next((s for s in sources if s.get("interest_name") == "General"), None)
-        if general:
-            interest_weights["General"] = 1.0
-        else:
-            # No General: use first interest with weight 1
-            names = {s["interest_name"] for s in sources}
-            if names:
-                interest_weights[next(iter(names))] = 1.0
-
-    # Aggregate (source_type, source_value) -> sum(weight)
     agg: dict[tuple[str, str], float] = {}
     for row in sources:
-        name = row["interest_name"]
-        w = interest_weights.get(name, 0.0) * float(row.get("weight") or 1.0)
-        if w <= 0:
+        key = (row["source_type"], (row["source_value"] or "").strip())
+        if not key[1]:
             continue
-        key = (row["source_type"], row["source_value"].strip())
+        w = float(row.get("weight") or 1.0)
         agg[key] = agg.get(key, 0) + w
 
     subreddits = sorted(
@@ -115,22 +86,6 @@ def get_sources_for_ingest(
         key=lambda x: -agg[("rss", x)],
     )
     return (subreddits, rss_urls)
-
-
-def get_subscriber_interest_counts() -> dict[str, int]:
-    """Return map interest_name -> count of subscribers who selected it."""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            SELECT i.name, COUNT(si.subscriber_id) AS c
-            FROM interests i
-            LEFT JOIN subscriber_interests si ON si.interest_id = i.id
-            GROUP BY i.id, i.name
-            HAVING COUNT(si.subscriber_id) > 0
-            """
-        )
-        return {row["name"]: row["c"] for row in cur.fetchall()}
 
 
 def upsert_raw_item(row: dict[str, Any]) -> str | None:

@@ -36,7 +36,7 @@ def main() -> int:
     p_run = sub.add_parser("run", help="Summarize clusters, catalysts, write report for a date")
     p_run.add_argument("--date", type=_date, default=str(date.today()), metavar="YYYY-MM-DD", help="Target date")
 
-    p_seed = sub.add_parser("seed", help="Seed interests and interest_sources")
+    p_seed = sub.add_parser("seed", help="Seed data (sources for ingest)")
 
     p_render = sub.add_parser("render_sample", help="Output a sample newsletter in the new style (no API)")
 

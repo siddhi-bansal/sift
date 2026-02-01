@@ -23,8 +23,7 @@ def run_ingest(target_date: str | None = None) -> int:
     d = target_date or str(date.today())
     fetched_dt = datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     counts = {"hn": 0, "reddit": 0, "rss": 0}
-    subscriber_counts = db.get_subscriber_interest_counts()
-    subreddits, rss_urls = db.get_sources_for_ingest(subscriber_counts if subscriber_counts else None)
+    subreddits, rss_urls = db.get_sources_for_ingest()
 
     def add_fetched(r: dict) -> dict:
         r = dict(r)
