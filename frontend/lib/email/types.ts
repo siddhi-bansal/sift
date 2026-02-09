@@ -18,12 +18,14 @@ export interface StartupGradeCard {
   evidence: string[];
   who_pays: string;
   why_existing_tools_fail?: string;
+  wedge_could_look_like?: string;
   stakes: string[];
   why_now: string[];
   wedge: WedgeBlock;
-  confidence: string;
+  status?: string; // External: "Early signal" | "Moderate signal" | "Strong signal"
+  status_line?: string; // Short explanatory line
+  confidence?: string; // Internal; prefer status for display
   kill_criteria?: string;
-  warnings?: string[];
   is_draft?: boolean;
 }
 

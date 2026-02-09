@@ -131,13 +131,14 @@ function renderCard(
   const cellStyle = `${CELL_BASE} padding: 0;`;
   const rows: string[] = [];
 
-  // Top row: confidence pill (if present) + draft badge
+  // Top row: status pill (if present) + draft badge
   const badges: string[] = [];
   if (card.is_draft) {
     badges.push(`<span class="email-pill-accent" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; color: ${ACCENT_DIM}; background-color: #3d3520; border-radius: 6px;">Draft</span>`);
   }
-  if (card.confidence) {
-    badges.push(`<span class="email-pill" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; color: ${PRIMARY}; background-color: #2d1f4e; border-radius: 6px;">${escapeHtml(card.confidence)}</span>`);
+  const statusDisplay = card.status || card.confidence;
+  if (statusDisplay) {
+    badges.push(`<span class="email-pill" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; color: ${PRIMARY}; background-color: #2d1f4e; border-radius: 6px;">${escapeHtml(statusDisplay)}</span>`);
   }
   if (badges.length > 0) {
     rows.push(`<tr><td style="${cellStyle} margin-bottom: 12px;">${badges.join(" &nbsp; ")}</td></tr>`);
@@ -164,6 +165,10 @@ function renderCard(
   if (card.why_existing_tools_fail) {
     rows.push(fieldRow("Why existing tools fail", card.why_existing_tools_fail, TEXT_SOFT_DARK));
   }
+  const wedgeCould = card.wedge_could_look_like || card.wedge?.mvp;
+  if (wedgeCould) {
+    rows.push(fieldRow("What a wedge could look like", wedgeCould, TEXT_SOFT_DARK));
+  }
 
   // Evidence: compact bullets
   if (card.evidence.length > 0) {
@@ -186,22 +191,14 @@ function renderCard(
     rows.push(fieldRow("Why now", compact, TEXT_SOFT_DARK));
   }
 
-  const wedgeHtml = renderWedge(card.wedge);
-  if (wedgeHtml) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${PRIMARY};">Wedge</p>${wedgeHtml}</td></tr>`
-    );
+  const statusText = card.status_line
+    ? `${card.status || ""}. ${card.status_line}`
+    : card.status || card.confidence;
+  if (statusText) {
+    rows.push(fieldRow("Status", statusText, TEXT_SOFT_DARK));
   }
   if (card.kill_criteria) {
     rows.push(fieldRow("Kill criteria", card.kill_criteria, TEXT_SOFT_DARK));
-  }
-
-  // Warnings: subtle callout
-  if (card.warnings && card.warnings.length > 0) {
-    const warnText = markdownInlineToHtml(card.warnings.join("; "));
-    rows.push(
-      `<tr><td style="${cellStyle}"><div class="email-warn" style="margin-top: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.4; color: ${WARN_TEXT_DARK}; background-color: ${WARN_BG_DARK}; border-radius: 6px; border-left: 3px solid ${ACCENT};">${warnText}</div></td></tr>`
-    );
   }
 
   const ctaHref = viewInBrowserUrl + (viewInBrowserUrl.indexOf("?") >= 0 ? "&" : "?") + "card=" + cardIndex;

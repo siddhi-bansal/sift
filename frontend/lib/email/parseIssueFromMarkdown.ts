@@ -31,12 +31,13 @@ function parseCardBlock(lines: string[]): StartupGradeCard | null {
   const evidence: string[] = [];
   let who_pays = "";
   let why_existing_tools_fail = "";
+  let wedge_could_look_like = "";
   const stakes: string[] = [];
   const why_now: string[] = [];
   const wedge: WedgeBlock = {};
-  let confidence = "med";
+  let status = "";
+  let status_line = "";
   let kill_criteria = "";
-  const warnings: string[] = [];
   let is_draft = false;
 
   let i = 1;
@@ -64,9 +65,20 @@ function parseCardBlock(lines: string[]): StartupGradeCard | null {
       if (key === "problem") problem = val;
       else if (key === "who pays") who_pays = val;
       else if (key === "why existing tools fail") why_existing_tools_fail = val;
-      else if (key === "confidence") confidence = val || "med";
-      else if (key === "kill criteria") kill_criteria = val;
-      else if (key === "warnings") warnings.push(...val.split(";").map((s) => trim(s)).filter(Boolean));
+      else if (key === "what a wedge could look like") wedge_could_look_like = val;
+      else if (key === "status") {
+        // Format: "Early signal — recurring but thin evidence. Only one HN thread so far."
+        const periodIdx = val.indexOf(". ");
+        if (periodIdx >= 0) {
+          status = val.slice(0, periodIdx).trim();
+          status_line = val.slice(periodIdx + 2).trim();
+        } else {
+          status = val;
+        }
+      }       else if (key === "kill criteria") kill_criteria = val;
+      else if (key === "who is affected" || key === "confidence" || key === "warnings") {
+        /* Legacy fields — ignore */
+      }
       i++;
       continue;
     }
@@ -126,12 +138,13 @@ function parseCardBlock(lines: string[]): StartupGradeCard | null {
     evidence,
     who_pays,
     why_existing_tools_fail: why_existing_tools_fail || undefined,
+    wedge_could_look_like: wedge_could_look_like || undefined,
     stakes,
     why_now,
     wedge,
-    confidence: confidence.toLowerCase(),
+    status: status || undefined,
+    status_line: status_line || undefined,
     kill_criteria: kill_criteria || undefined,
-    warnings: warnings.length ? warnings : undefined,
     is_draft: is_draft || undefined,
   };
 }
