@@ -3,7 +3,7 @@
  *
  * README (safe to edit / structure):
  * ---------------------------------
- * - SAFE TO EDIT: Brand tokens (NAVY, PURPLE, YELLOW, etc.), "Sift" label text,
+ * - SAFE TO EDIT: Brand tokens (BG_DARK, PRIMARY, ACCENT, etc.), "Sift" label text,
  *   footer copy, preheader text logic, and the optional viewInBrowserUrl /
  *   unsubscribeUrl placeholders. Do not remove inline styles from critical
  *   elements (tables, td, a, buttons); email clients rely on them.
@@ -23,8 +23,7 @@
  *   Gmail may strip or move <style>; Outlook (Windows) uses Word engine and
  *   ignores many CSS properties (border-radius, box-shadow). Buttons are
  *   table-based (bulletproof) for maximum compatibility. No external fonts;
- *   system stack only. Default design = dark theme (navy #0B1020, dark cards
- *   #111827); clients that support prefers-color-scheme get light/dark
+ *   system stack only. Default design = dark theme (charcoal #16181d, cards #23262e); clients that support prefers-color-scheme get light/dark
  *   overrides; others get the inline default.
  */
 
@@ -35,30 +34,32 @@ import {
   escapeHtml,
 } from "./sanitizeMarkdown";
 
-// ---- Brand tokens (default = dark theme; solid hex to avoid invert artifacts) ----
-const NAVY = "#0B1020";
-const PURPLE = "#7C3AED";
-const YELLOW = "#FBBF24";
-const BAND_TITLE = "#F9FAFB";
-const BAND_BODY = "#CBD5E1";
-const CARD_BG_DARK = "#111827";
-const CARD_BORDER_DARK = "rgba(255,255,255,0.12)";
-const CARD_TITLE = "#F9FAFB";
-const CARD_BODY = "#CBD5E1";
-const CARD_LABEL = "#E5E7EB";
-const WARN_BG_DARK = "#1F2937";
-const WARN_TEXT_DARK = "#CBD5E1";
-const FOOTER_TEXT = "#CBD5E1";
-const FOOTER_BORDER = "#374151";
-const TEXT_LIGHT = "#111827";
-const BODY_LIGHT = "#374151";
-const BORDER_LIGHT = "#e5e7eb";
+// ---- Brand tokens (match website globals.css) ----
+const BG_DARK = "#16181d";
+const CARD_BG_DARK = "#23262e";
+const BORDER_DARK = "#3b3f47";
+const PRIMARY = "#8b5cf6";
+const PRIMARY_DIM = "#7c3aed";
+const ACCENT = "#f59e0b";
+const ACCENT_DIM = "#d97706";
+const TEXT_DARK = "#f0f0f0";
+const TEXT_SOFT_DARK = "#b8bcc4";
+const MUTED_DARK = "#8b9199";
+const WARN_BG_DARK = "#2d3139";
+const WARN_TEXT_DARK = "#b8bcc4";
+// Light mode
+const BG_LIGHT = "#f8fafc";
 const CARD_BG_LIGHT = "#ffffff";
+const BORDER_LIGHT = "#e2e8f0";
+const TEXT_LIGHT = "#0f172a";
+const BODY_LIGHT = "#475569";
+const MUTED_LIGHT = "#94a3b8";
 
 const FONT =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 const PADDING = "24px";
 const CELL_BASE = `vertical-align: top; font-family: ${FONT};`;
+const CARD_RADIUS = "12px";
 
 function block(tag: string, style: string, content: string): string {
   return `<${tag} style="${style}">${content}</${tag}>`;
@@ -75,7 +76,7 @@ function parseThemes(themesLine: string | undefined): string[] {
 
 function renderWedge(w: WedgeBlock): string {
   const parts: string[] = [];
-  const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
+  const liStyle = `margin: 3px 0; font-size: 13px; line-height: 1.4; color: ${TEXT_SOFT_DARK};`;
   const cellStyle = `${CELL_BASE} padding: 0; ${liStyle}`;
   if (w.icp)
     parts.push(
@@ -106,18 +107,22 @@ function renderWedge(w: WedgeBlock): string {
  * href and label are escaped by caller.
  */
 function bulletproofButton(href: string, label: string): string {
-  const textColor = "#ffffff";
   return `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left" style="margin-top: 12px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left" style="margin-top: 16px;">
   <tr>
-    <td align="center" style="border-radius: 8px; background-color: ${PURPLE};">
-      <a href="${escapeHtml(href)}" target="_blank" style="display: inline-block; padding: 12px 20px; font-family: ${FONT}; font-size: 14px; font-weight: 600; color: ${textColor}; text-decoration: none;">${escapeHtml(label)}</a>
+    <td align="center" style="border-radius: 8px; background-color: ${PRIMARY};">
+      <a href="${escapeHtml(href)}" target="_blank" style="display: inline-block; padding: 12px 22px; font-family: ${FONT}; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none;">${escapeHtml(label)}</a>
     </td>
   </tr>
 </table>`;
 }
 
-/** Renders one idea card; default = dark (bg #111827, solid hex text). */
+/** Compact field row: small label + value for scannability */
+function fieldRow(label: string, value: string, bodyColor: string): string {
+  return `<tr><td style="${CELL_BASE} padding: 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 10px;"><tr><td style="${CELL_BASE} padding: 0 0 2px 0; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${PRIMARY};">${escapeHtml(label)}</td></tr><tr><td style="${CELL_BASE} padding: 0; font-size: 14px; line-height: 1.45; color: ${bodyColor};">${markdownInlineToHtml(value)}</td></tr></table></td></tr>`;
+}
+
+/** Renders one idea card with card-like styling: left accent, scannable layout. */
 function renderCard(
   card: StartupGradeCard,
   cardIndex: number,
@@ -126,93 +131,84 @@ function renderCard(
   const cellStyle = `${CELL_BASE} padding: 0;`;
   const rows: string[] = [];
 
+  // Top row: confidence pill (if present) + draft badge
+  const badges: string[] = [];
   if (card.is_draft) {
-    rows.push(
-      `<tr><td style="${cellStyle} font-size: 13px; color: ${CARD_BODY};"><em>Draft — needs more receipts</em></td></tr>`
-    );
+    badges.push(`<span class="email-pill-accent" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; color: ${ACCENT_DIM}; background-color: #3d3520; border-radius: 6px;">Draft</span>`);
   }
+  if (card.confidence) {
+    badges.push(`<span class="email-pill" style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; color: ${PRIMARY}; background-color: #2d1f4e; border-radius: 6px;">${escapeHtml(card.confidence)}</span>`);
+  }
+  if (badges.length > 0) {
+    rows.push(`<tr><td style="${cellStyle} margin-bottom: 12px;">${badges.join(" &nbsp; ")}</td></tr>`);
+  }
+
+  // Title: prominent, card-like
   rows.push(
-    `<tr><td style="${cellStyle} margin: 0 0 6px 0; font-size: 16px; font-weight: 700; line-height: 1.3; color: ${CARD_TITLE};">${markdownInlineToHtml(card.title)}</td></tr>`
+    `<tr><td style="${cellStyle} margin: 0 0 8px 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: ${TEXT_DARK}; letter-spacing: -0.02em;">${markdownInlineToHtml(card.title)}</td></tr>`
   );
+  // Hook: one-line summary
   if (card.hook) {
     rows.push(
-      `<tr><td style="${cellStyle} margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.hook)}</td></tr>`
+      `<tr><td style="${cellStyle} margin: 0 0 16px 0; font-size: 15px; line-height: 1.5; color: ${TEXT_SOFT_DARK};">${markdownInlineToHtml(card.hook)}</td></tr>`
     );
   }
+
+  // Key fields in compact scannable format (Problem, Who pays, Why tools fail)
   if (card.problem) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Problem:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.problem)}</p></td></tr>`
-    );
+    rows.push(fieldRow("Problem", card.problem, TEXT_SOFT_DARK));
   }
+  if (card.who_pays) {
+    rows.push(fieldRow("Who pays", card.who_pays, TEXT_SOFT_DARK));
+  }
+  if (card.why_existing_tools_fail) {
+    rows.push(fieldRow("Why existing tools fail", card.why_existing_tools_fail, TEXT_SOFT_DARK));
+  }
+
+  // Evidence: compact bullets
   if (card.evidence.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
+    const liStyle = `margin: 2px 0; font-size: 13px; line-height: 1.4; color: ${TEXT_SOFT_DARK};`;
     const bullets = card.evidence
       .map((e) => `<li style="${liStyle}">${markdownInlineToHtml(e)}</li>`)
       .join("");
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Evidence:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${PRIMARY};">Evidence</p><ul style="margin: 0 0 12px 0; padding-left: 18px;">${bullets}</ul></td></tr>`
     );
   }
-  if (card.who_pays) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Who pays:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.who_pays)}</p></td></tr>`
-    );
-  }
-  if (card.why_existing_tools_fail) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Why existing tools fail:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.why_existing_tools_fail)}</p></td></tr>`
-    );
-  }
+
+  // Stakes + Why now: compact
   if (card.stakes.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
-    const bullets = card.stakes
-      .map((s) => `<li style="${liStyle}">${markdownInlineToHtml(s)}</li>`)
-      .join("");
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Stakes:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
-    );
+    const compact = card.stakes.map((s) => markdownInlineToHtml(s)).join(" · ");
+    rows.push(fieldRow("Stakes", compact, TEXT_SOFT_DARK));
   }
   if (card.why_now.length > 0) {
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${CARD_BODY};`;
-    const bullets = card.why_now
-      .map((w) => `<li style="${liStyle}">${markdownInlineToHtml(w)}</li>`)
-      .join("");
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Why now:</p><ul style="margin: 0 0 10px 0; padding-left: 20px;">${bullets}</ul></td></tr>`
-    );
+    const compact = card.why_now.map((w) => markdownInlineToHtml(w)).join(" · ");
+    rows.push(fieldRow("Why now", compact, TEXT_SOFT_DARK));
   }
+
   const wedgeHtml = renderWedge(card.wedge);
   if (wedgeHtml) {
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Wedge:</p>${wedgeHtml}</td></tr>`
-    );
-  }
-  if (card.confidence) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Confidence:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.confidence)}</p></td></tr>`
+      `<tr><td style="${cellStyle}"><p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: ${PRIMARY};">Wedge</p>${wedgeHtml}</td></tr>`
     );
   }
   if (card.kill_criteria) {
-    rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Kill criteria:</p><p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${CARD_BODY};">${markdownInlineToHtml(card.kill_criteria)}</p></td></tr>`
-    );
+    rows.push(fieldRow("Kill criteria", card.kill_criteria, TEXT_SOFT_DARK));
   }
+
+  // Warnings: subtle callout
   if (card.warnings && card.warnings.length > 0) {
     const warnText = markdownInlineToHtml(card.warnings.join("; "));
-    const warnBox = `margin: 8px 0 0 0; padding: 10px 12px; font-size: 12px; line-height: 1.4; color: ${WARN_TEXT_DARK}; background-color: ${WARN_BG_DARK}; border-radius: 4px;`;
     rows.push(
-      `<tr><td style="${cellStyle}"><p style="margin: 10px 0 4px 0; font-size: 14px; font-weight: 600; color: ${CARD_LABEL};">Warnings:</p><div class="email-warn" style="${warnBox}">${warnText}</div></td></tr>`
+      `<tr><td style="${cellStyle}"><div class="email-warn" style="margin-top: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.4; color: ${WARN_TEXT_DARK}; background-color: ${WARN_BG_DARK}; border-radius: 6px; border-left: 3px solid ${ACCENT};">${warnText}</div></td></tr>`
     );
   }
 
   const ctaHref = viewInBrowserUrl + (viewInBrowserUrl.indexOf("?") >= 0 ? "&" : "?") + "card=" + cardIndex;
-  const ctaHtml = bulletproofButton(ctaHref, "Read cluster");
+  rows.push(`<tr><td style="${cellStyle} padding-top: 12px; border-top: 1px solid ${BORDER_DARK};">${bulletproofButton(ctaHref, "Read cluster")}</td></tr>`);
 
-  rows.push(
-    `<tr><td style="${cellStyle} padding-top: 8px;">${ctaHtml}</td></tr>`
-  );
-
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-card" style="margin-bottom: 24px; border: 1px solid ${CARD_BORDER_DARK}; border-radius: 8px; background-color: ${CARD_BG_DARK};" bgcolor="${CARD_BG_DARK}"><tr><td style="${CELL_BASE} padding: 16px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>${rows.join("")}</tbody></table></td></tr></table>`;
+  // Card wrapper: left accent bar (4px purple), border, rounded corners
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-card" style="margin-bottom: 28px; border: 1px solid ${BORDER_DARK}; border-left: 4px solid ${PRIMARY}; border-radius: ${CARD_RADIUS}; background-color: ${CARD_BG_DARK};" bgcolor="${CARD_BG_DARK}"><tr><td style="${CELL_BASE} padding: 20px 24px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>${rows.join("")}</tbody></table></td></tr></table>`;
 }
 
 export interface RenderEmailOptions {
@@ -245,30 +241,30 @@ export function renderIssueEmailHtml(
   const themes = parseThemes(issue.themes_line);
   const sectionTitlePlain = stripLeadingHashes(issue.section_title ?? "");
 
-  // ---- Header: purple brand bar (bgcolor for Outlook) ----
+  // ---- Header: brand bar (primary violet) ----
   const headerBar = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${PURPLE};" bgcolor="${PURPLE}" tpl="header">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${PRIMARY};" bgcolor="${PRIMARY}" tpl="header">
   <tr>
-    <td style="${CELL_BASE} padding: 14px ${PADDING};">
-      <span style="font-size: 18px; font-weight: 700; color: #000000; letter-spacing: -0.02em;">Signal, not noise. Build what matters.</span>
+    <td style="${CELL_BASE} padding: 18px ${PADDING};">
+      <span style="font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">Signal, not noise. Build what matters.</span>
     </td>
   </tr>
 </table>`;
 
-  // ---- Title (below header, no date); intro optional ----
-  const titleDateStyle = `margin: 0 0 4px 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: ${BAND_TITLE};`;
+  // ---- Title (below header); intro optional ----
+  const titleDateStyle = `margin: 0 0 4px 0; font-size: 22px; font-weight: 700; line-height: 1.3; color: ${TEXT_DARK};`;
   const titleDateBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: ${PADDING}; color: ${BAND_BODY};">
+    <td style="${CELL_BASE} padding: ${PADDING}; color: ${TEXT_SOFT_DARK};">
       ${block("h1", titleDateStyle, escapeHtml(titleDisplay))}
-      ${issue.intro ? block("p", `margin: 12px 0 0 0; font-size: 15px; line-height: 1.5; color: ${BAND_BODY};`, markdownInlineToHtml(issue.intro)) : ""}
+      ${issue.intro ? block("p", `margin: 12px 0 0 0; font-size: 15px; line-height: 1.5; color: ${TEXT_SOFT_DARK};`, markdownInlineToHtml(issue.intro)) : ""}
     </td>
   </tr>
 </table>`;
 
-  // ---- Themes: 2–4 pill badges (yellow highlight) ----
-  const pillStyle = `display: inline-block; margin: 0 6px 6px 0; padding: 6px 12px; font-size: 13px; font-weight: 600; color: ${NAVY}; background-color: ${YELLOW}; border-radius: 999px;`;
+  // ---- Themes: 2–4 pill badges (accent amber, like website) ----
+  const pillStyle = `display: inline-block; margin: 0 8px 8px 0; padding: 6px 14px; font-size: 12px; font-weight: 600; letter-spacing: 0.03em; color: #1a1612; background-color: ${ACCENT}; border-radius: 999px;`;
   const themesHtml =
     themes.length > 0
       ? themes
@@ -276,9 +272,9 @@ export function renderIssueEmailHtml(
           .join("")
       : "";
   const themesBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: 0 ${PADDING} 20px ${PADDING};">
+    <td style="${CELL_BASE} padding: 0 ${PADDING} 22px ${PADDING};">
       ${themesHtml}
     </td>
   </tr>
@@ -286,40 +282,40 @@ export function renderIssueEmailHtml(
 
   // ---- Section title ----
   const sectionTitleBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: 0 ${PADDING} 12px ${PADDING};">
-      <h2 style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; color: ${BAND_TITLE};">${escapeHtml(sectionTitlePlain)}</h2>
+    <td style="${CELL_BASE} padding: 0 ${PADDING} 14px ${PADDING};">
+      <h2 style="margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; color: ${TEXT_DARK}; letter-spacing: -0.01em;">${escapeHtml(sectionTitlePlain)}</h2>
     </td>
   </tr>
 </table>`;
 
-  // ---- Cards (each with CTA); default = dark cards #111827 ----
+  // ---- Cards (each with CTA) ----
   const cardsHtml = issue.cards
     .map((card, i) => renderCard(card, i, viewInBrowserUrl))
     .join("");
 
   const cardsBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: 0 ${PADDING};">
+    <td style="${CELL_BASE} padding: 0 ${PADDING} 8px ${PADDING};">
       ${cardsHtml}
     </td>
   </tr>
 </table>`;
 
-  // ---- One bet + Rejects (solid hex text) ----
+  // ---- One bet + Rejects ----
   const footerParts: string[] = [];
   if (issue.one_bet) {
     footerParts.push(
-      `<p style="margin: 0 0 10px 0; font-size: 15px; line-height: 1.5; color: ${BAND_BODY};"><strong>One bet:</strong> ${markdownInlineToHtml(issue.one_bet)}</p>`
+      `<p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.5; color: ${TEXT_SOFT_DARK};"><strong style="color: ${ACCENT};">One bet:</strong> ${markdownInlineToHtml(issue.one_bet)}</p>`
     );
   }
   if (issue.rejects.length > 0) {
     footerParts.push(
-      `<h2 style="margin: 16px 0 8px 0; font-size: 18px; font-weight: 700; color: ${BAND_TITLE};">Rejects (buildability gate)</h2>`
+      `<h2 style="margin: 16px 0 10px 0; font-size: 16px; font-weight: 700; color: ${TEXT_DARK};">Rejects (buildability gate)</h2>`
     );
-    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${BAND_BODY};`;
+    const liStyle = `margin: 4px 0; font-size: 14px; line-height: 1.45; color: ${TEXT_SOFT_DARK};`;
     const listItems = issue.rejects
       .map((r) => `<li style="${liStyle}">${markdownInlineToHtml(r)}</li>`)
       .join("");
@@ -331,23 +327,23 @@ export function renderIssueEmailHtml(
   const extraBlock =
     footerParts.length > 0
       ? `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY};" bgcolor="${NAVY}" tpl="band">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}" tpl="band">
   <tr>
-    <td style="${CELL_BASE} padding: 12px ${PADDING} 24px ${PADDING}; color: ${BAND_BODY};">
+    <td style="${CELL_BASE} padding: 16px ${PADDING} 28px ${PADDING}; color: ${TEXT_SOFT_DARK};">
       ${footerParts.join("")}
     </td>
   </tr>
 </table>`
       : "";
 
-  // ---- Footer: unsubscribe + view in browser (solid hex) ----
-  const footerLinkStyle = `color: ${FOOTER_TEXT}; text-decoration: underline; font-size: 13px;`;
+  // ---- Footer: unsubscribe + view in browser ----
+  const footerLinkStyle = `color: ${PRIMARY}; text-decoration: none; font-size: 13px; font-weight: 500;`;
   const footerBlock = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${NAVY}; border-top: 1px solid ${FOOTER_BORDER};" bgcolor="${NAVY}" tpl="footer">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${BG_DARK}; border-top: 1px solid ${BORDER_DARK};" bgcolor="${BG_DARK}" tpl="footer">
   <tr>
-    <td style="${CELL_BASE} padding: 20px ${PADDING}; color: ${FOOTER_TEXT};">
+    <td style="${CELL_BASE} padding: 20px ${PADDING}; color: ${MUTED_DARK};">
       <a href="${escapeHtml(unsubscribeUrl)}" style="${footerLinkStyle}">Unsubscribe</a>
-      <span style="color: ${FOOTER_TEXT}; font-size: 13px;"> &nbsp;·&nbsp; </span>
+      <span style="color: ${MUTED_DARK}; font-size: 13px;"> &nbsp;·&nbsp; </span>
       <a href="${escapeHtml(viewInBrowserUrl)}" style="${footerLinkStyle}">View in browser</a>
     </td>
   </tr>
@@ -363,7 +359,7 @@ export function renderIssueEmailHtml(
     footerBlock;
 
   const inner = `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-inner" align="center" style="max-width: 600px; width: 100%; background-color: ${NAVY};" bgcolor="${NAVY}">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-inner" align="center" style="max-width: 600px; width: 100%; background-color: ${BG_DARK};" bgcolor="${BG_DARK}">
   <tr>
     <td style="${CELL_BASE} padding: 0;">
       ${bodyContent}
@@ -387,60 +383,60 @@ export function renderIssueEmailHtml(
       .email-inner { width: 100% !important; max-width: 100% !important; }
       .email-inner td { padding-left: 12px !important; padding-right: 12px !important; }
     }
-    /* Light mode: bands and cards white, text dark */
+    /* Light mode: clean, readable */
     @media (prefers-color-scheme: light) {
-      .email-body-dark { background-color: #f5f5f5 !important; }
+      .email-body-dark { background-color: ${BG_LIGHT} !important; }
       .email-body-dark .email-wrapper,
-      .email-body-dark .email-wrapper td { background-color: #f5f5f5 !important; }
-      .email-body-dark .email-inner { background-color: #f5f5f5 !important; }
-      .email-body-dark .email-inner table[tpl="header"] { background-color: ${PURPLE} !important; }
+      .email-body-dark .email-wrapper td { background-color: ${BG_LIGHT} !important; }
+      .email-body-dark .email-inner { background-color: ${BG_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="header"] { background-color: ${PRIMARY} !important; }
       .email-body-dark .email-inner table[tpl="band"],
-      .email-body-dark .email-inner table[tpl="band"] td { background-color: #ffffff !important; color: ${TEXT_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="band"] td { background-color: #ffffff !important; color: ${BODY_LIGHT} !important; }
       .email-body-dark .email-inner table[tpl="band"] h1,
       .email-body-dark .email-inner table[tpl="band"] h2 { color: ${TEXT_LIGHT} !important; }
       .email-body-dark .email-inner table[tpl="band"] p,
       .email-body-dark .email-inner table[tpl="band"] li { color: ${BODY_LIGHT} !important; }
-      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_LIGHT} !important; border-color: ${BORDER_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_LIGHT} !important; border-color: ${BORDER_LIGHT} !important; border-left-color: ${PRIMARY} !important; }
       .email-body-dark .email-inner .email-card td,
       .email-body-dark .email-inner .email-card p,
       .email-body-dark .email-inner .email-card li { color: ${BODY_LIGHT} !important; }
-      .email-body-dark .email-inner .email-card h3,
       .email-body-dark .email-inner .email-card [style*="font-weight: 700"] { color: ${TEXT_LIGHT} !important; }
-      .email-body-dark .email-inner .email-card [style*="font-weight: 600"] { color: ${BODY_LIGHT} !important; }
-      .email-body-dark .email-inner .email-card .email-warn { background-color: #f3f4f6 !important; color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card .email-warn { background-color: #fef3c7 !important; color: #92400e !important; border-left-color: ${ACCENT} !important; }
       .email-body-dark .email-inner table[tpl="footer"] { background-color: #ffffff !important; border-top-color: ${BORDER_LIGHT} !important; }
-      .email-body-dark .email-inner table[tpl="footer"] td,
-      .email-body-dark .email-inner table[tpl="footer"] a { color: ${PURPLE} !important; }
-      .email-body-dark .email-inner table[tpl="footer"] span { color: ${BODY_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] td { color: ${MUTED_LIGHT} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] a { color: ${PRIMARY} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] span { color: ${MUTED_LIGHT} !important; }
+      .email-body-dark .email-inner .email-card .email-pill { background-color: #ede9fe !important; color: ${PRIMARY_DIM} !important; }
+      .email-body-dark .email-inner .email-card .email-pill-accent { background-color: #fef3c7 !important; color: ${ACCENT_DIM} !important; }
     }
-    /* Dark mode: reinforce navy/card dark (default) */
+    /* Dark mode: website charcoal (default) */
     @media (prefers-color-scheme: dark) {
-      .email-body-dark { background-color: ${NAVY} !important; }
+      .email-body-dark { background-color: ${BG_DARK} !important; }
       .email-body-dark .email-wrapper,
-      .email-body-dark .email-wrapper td { background-color: ${NAVY} !important; }
-      .email-body-dark .email-inner { background-color: ${NAVY} !important; }
+      .email-body-dark .email-wrapper td { background-color: ${BG_DARK} !important; }
+      .email-body-dark .email-inner { background-color: ${BG_DARK} !important; }
       .email-body-dark .email-inner table[tpl="band"],
-      .email-body-dark .email-inner table[tpl="band"] td { background-color: ${NAVY} !important; color: ${BAND_BODY} !important; }
+      .email-body-dark .email-inner table[tpl="band"] td { background-color: ${BG_DARK} !important; color: ${TEXT_SOFT_DARK} !important; }
       .email-body-dark .email-inner table[tpl="band"] h1,
-      .email-body-dark .email-inner table[tpl="band"] h2 { color: ${BAND_TITLE} !important; }
-      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_DARK} !important; border-color: ${CARD_BORDER_DARK} !important; }
-      .email-body-dark .email-inner table[tpl="footer"] { background-color: ${NAVY} !important; }
+      .email-body-dark .email-inner table[tpl="band"] h2 { color: ${TEXT_DARK} !important; }
+      .email-body-dark .email-inner .email-card { background-color: ${CARD_BG_DARK} !important; border-color: ${BORDER_DARK} !important; border-left-color: ${PRIMARY} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] { background-color: ${BG_DARK} !important; }
       .email-body-dark .email-inner table[tpl="footer"] td,
-      .email-body-dark .email-inner table[tpl="footer"] a { color: ${FOOTER_TEXT} !important; }
+      .email-body-dark .email-inner table[tpl="footer"] a { color: ${MUTED_DARK} !important; }
     }
     /* Outlook.com dark: [data-ogsc] = dark mode active */
     [data-ogsc] .email-body-dark,
     [data-ogsc] .email-wrapper,
-    [data-ogsc] .email-wrapper td { background-color: ${NAVY} !important; }
-    [data-ogsc] .email-inner { background-color: ${NAVY} !important; }
+    [data-ogsc] .email-wrapper td { background-color: ${BG_DARK} !important; }
+    [data-ogsc] .email-inner { background-color: ${BG_DARK} !important; }
     [data-ogsc] .email-inner table[tpl="band"],
-    [data-ogsc] .email-inner table[tpl="band"] td { background-color: ${NAVY} !important; color: ${BAND_BODY} !important; }
+    [data-ogsc] .email-inner table[tpl="band"] td { background-color: ${BG_DARK} !important; color: ${TEXT_SOFT_DARK} !important; }
     [data-ogsc] .email-inner table[tpl="band"] h1,
-    [data-ogsc] .email-inner table[tpl="band"] h2 { color: ${BAND_TITLE} !important; }
+    [data-ogsc] .email-inner table[tpl="band"] h2 { color: ${TEXT_DARK} !important; }
     [data-ogsc] .email-inner .email-card { background-color: ${CARD_BG_DARK} !important; }
-    [data-ogsc] .email-inner table[tpl="footer"] { background-color: ${NAVY} !important; }
+    [data-ogsc] .email-inner table[tpl="footer"] { background-color: ${BG_DARK} !important; }
     [data-ogsc] .email-inner table[tpl="footer"] td,
-    [data-ogsc] .email-inner table[tpl="footer"] a { color: ${FOOTER_TEXT} !important; }
+    [data-ogsc] .email-inner table[tpl="footer"] a { color: ${MUTED_DARK} !important; }
   </style>
   <!--[if mso]>
   <noscript>
@@ -452,11 +448,11 @@ export function renderIssueEmailHtml(
   </noscript>
   <![endif]-->
 </head>
-<body class="email-body-dark" style="margin: 0; padding: 0; background-color: ${NAVY}; font-family: ${FONT}; -webkit-text-size-adjust: 100%;">
+<body class="email-body-dark" style="margin: 0; padding: 0; background-color: ${BG_DARK}; font-family: ${FONT}; -webkit-text-size-adjust: 100%;">
 ${preheaderHtml}
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-wrapper" style="background-color: ${NAVY};" bgcolor="${NAVY}">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-wrapper" style="background-color: ${BG_DARK};" bgcolor="${BG_DARK}">
   <tr>
-    <td align="center" style="padding: 24px 16px;" bgcolor="${NAVY}">
+    <td align="center" style="padding: 24px 16px;" bgcolor="${BG_DARK}">
       ${inner}
     </td>
   </tr>
