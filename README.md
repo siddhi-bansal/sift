@@ -6,31 +6,6 @@ Daily digest of **pain signals** (complaints, unfulfilled needs, workflows peopl
 
 **Ingest** pulls posts from HN, Reddit, and RSS (sources from Supabase) and writes them to `raw_items`. **Analyze** scores and labels each item (PAIN / DISCUSSION / NEWS / OTHER), keeps PAIN/DISCUSSION, embeds (or TF-IDF) and clusters them, then writes `clusters` and `cluster_items`. **Run** summarizes each cluster and news items with Gemini, computes rising clusters vs the previous day and picks a wildcard, then rewrites every item into the strict newsletter template (evidence-grounded, no hallucinations). The final markdown is written to `daily_reports` and `/out/YYYY-MM-DD.md`.
 
-```mermaid
-flowchart LR
-  subgraph Ingest
-    HN[HN] --> RI[raw_items]
-    Reddit[Reddit] --> RI
-    RSS[RSS] --> RI
-  end
-  subgraph Analyze
-    RI --> PS[Pain score + label]
-    PS --> PAIN[PAIN/DISCUSSION]
-    PAIN --> EMB[Embed or TF-IDF]
-    EMB --> CL[Clusters]
-    CL --> CI[cluster_items]
-  end
-  subgraph Run
-    CI --> SUM[Summarize clusters]
-    RI --> CAT[Catalyst bullets]
-    SUM --> STYLE[newsletter_style]
-    CAT --> STYLE
-    STYLE --> MD[Markdown report]
-    MD --> DR[daily_reports]
-    MD --> OUT[/out/YYYY-MM-DD.md]
-  end
-```
-
 ## Product concept
 
 - **Sources:** HN (Firebase API), Reddit (Apify scrapers or PRAW; subreddits from subscriber interests), RSS (feeds from interests).
